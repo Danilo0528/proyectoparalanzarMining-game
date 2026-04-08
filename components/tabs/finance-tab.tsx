@@ -297,9 +297,13 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
     const giveUSD = parseFloat(payoutInput) || 0
     const getGold = giveUSD * 1000
 
+    // Find the configured wallet for this method
+    const configuredWallet = wallets.find(w => w.name === selectedMethod.name)
+    const isWalletConfigured = configuredWallet && configuredWallet.enabled && configuredWallet.address?.trim()
+
     return (
         <div className="flex flex-col items-center justify-center h-full animate-in fade-in zoom-in duration-300 py-8">
-        <div className="w-full max-w-md bg-[#e8d5b0] p-6 md:p-8 rounded-sm shadow-2xl relative" style={{ 
+        <div className="w-full max-w-md bg-[#e8d5b0] p-6 md:p-8 rounded-sm shadow-2xl relative" style={{
             background: "linear-gradient(135deg, rgba(232, 213, 176, 0.95), rgba(245, 230, 200, 0.95))",
             boxShadow: "inset 0 0 20px rgba(92, 68, 44, 0.1), 0 10px 30px rgba(0,0,0,0.15)",
             clipPath: "polygon(0 0, 100% 2%, 99% 100%, 1% 98%)"
@@ -307,24 +311,50 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
             <Button variant="ghost" onClick={() => setActiveView("list")} className="absolute top-4 left-4 text-[#5c442c] hover:bg-[#d6c19f]/30">
                 ← Back
             </Button>
-  
-            <h3 className="text-2xl font-black text-[#5c442c] mb-8 mt-4 uppercase text-center">{selectedMethod.name} Top Up</h3>
-  
+
+            <h3 className="text-2xl font-black text-[#5c442c] mb-4 mt-4 uppercase text-center">{selectedMethod.name} Top Up</h3>
+
+            {/* Wallet Address Section */}
+            {isWalletConfigured ? (
+              <div className="mb-6 p-4 bg-green-50 border-2 border-green-400 rounded-lg">
+                <p className="text-sm font-bold text-green-800 mb-2">📍 Send payment to this address:</p>
+                <div className="p-3 bg-white rounded-lg border border-green-300">
+                  <p className="font-mono text-xs text-[#4a3728] break-all select-all">
+                    {configuredWallet.address}
+                  </p>
+                </div>
+                {configuredWallet.network && (
+                  <p className="text-xs text-green-700 mt-2">🌐 Network: <strong>{configuredWallet.network}</strong></p>
+                )}
+                {configuredWallet.minDepositUSD && (
+                  <p className="text-xs text-green-700 mt-1">💰 Minimum: <strong>${configuredWallet.minDepositUSD} USD</strong></p>
+                )}
+                {configuredWallet.instructions && (
+                  <p className="text-xs text-green-700 mt-1">📝 {configuredWallet.instructions}</p>
+                )}
+              </div>
+            ) : (
+              <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
+                <p className="text-sm font-bold text-yellow-800">⚠️ This wallet is not configured yet.</p>
+                <p className="text-xs text-yellow-700 mt-1">Please choose another payment method or contact support.</p>
+              </div>
+            )}
+
             <div className="space-y-6">
               <div>
                 <label className="text-sm font-bold text-[#5c442c] block mb-2 px-1">You send ($)</label>
                 <div className="bg-[#fef9f0] flex items-center p-2 rounded-sm shadow-inner relative group">
                   <span className="text-2xl mr-3 font-bold text-green-700 pl-2">$</span>
-                  <Input 
-                    type="number" 
-                    value={payoutInput} 
+                  <Input
+                    type="number"
+                    value={payoutInput}
                     onChange={e => setPayoutInput(e.target.value)}
                     placeholder="10"
                     className="border-0 bg-transparent text-xl font-bold text-[#5c442c] w-full focus-visible:ring-0 shadow-none px-0"
                   />
                 </div>
               </div>
-  
+
                <div>
                 <label className="text-sm font-bold text-[#5c442c] block mb-2 px-1">You receive (🪙)</label>
                 <div className="bg-[#d6c19f]/20 flex items-center p-2 rounded-sm opacity-80 shadow-inner">
@@ -332,15 +362,20 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
                   <span className="text-xl font-bold text-[#5c442c] block w-full">{getGold.toLocaleString()}</span>
                 </div>
               </div>
-              
+
               <div className="pt-8 flex justify-center">
-                <Button 
+                <Button
                   onClick={handleTopup}
-                  className="w-full bg-gradient-to-r from-[#f5d742] via-[#e6c229] to-[#d4a534] hover:brightness-110 text-[#5c442c] font-black uppercase tracking-wider py-6 rounded-full shadow-lg border-b-4 border-[#a67c00] active:border-b-0 active:translate-y-1 transition-all"
+                  disabled={!isWalletConfigured}
+                  className="w-full bg-gradient-to-r from-[#f5d742] via-[#e6c229] to-[#d4a534] hover:brightness-110 text-[#5c442c] font-black uppercase tracking-wider py-6 rounded-full shadow-lg border-b-4 border-[#a67c00] active:border-b-0 active:translate-y-1 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Top Up Balance
+                  {isWalletConfigured ? '✅ I Already Sent Payment' : '⚠️ Wallet Not Configured'}
                 </Button>
               </div>
+
+              <p className="text-xs text-center text-[#6b5344] mt-2">
+                💡 After clicking, coins will be credited immediately. Admin will verify your deposit.
+              </p>
             </div>
           </div>
         </div>
