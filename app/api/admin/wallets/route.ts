@@ -16,13 +16,18 @@ export async function GET(req: Request) {
     const wallets = db.collection('wallets');
 
     const walletConfig = await wallets.find({}).toArray();
-    
-    if (walletConfig.length === 0) {
-      // Return default wallets if none configured
-      return NextResponse.json({ wallets: defaultWallets });
-    }
 
-    return NextResponse.json({ wallets: walletConfig });
+    // Merge configured wallets with defaults
+    // Always return all 9 wallets, with configured data where available
+    const mergedWallets = defaultWallets.map(defaultWallet => {
+      const configured = walletConfig.find(w => w.id === defaultWallet.id);
+      if (configured) {
+        return { ...defaultWallet, ...configured };
+      }
+      return defaultWallet;
+    });
+
+    return NextResponse.json({ wallets: mergedWallets });
   } catch (e: any) {
     console.error(e);
     return NextResponse.json({ error: e.message }, { status: 500 });

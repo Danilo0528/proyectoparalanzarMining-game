@@ -27,6 +27,33 @@ export async function POST(req: Request) {
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
+      // Check for referral code
+      const url = new URL(req.url);
+      const referralCode = url.searchParams.get('ref');
+      let referredBy = null;
+
+      if (referralCode) {
+        // Find the referrer
+        const referrer = await users.findOne({ email: referralCode });
+        if (referrer) {
+          referredBy = referralCode;
+          // Add referral to referrer's list
+          await users.updateOne(
+            { email: referralCode },
+            {
+              $push: {
+                referrals: {
+                  email,
+                  referredAt: new Date(),
+                  level: 1
+                }
+              },
+              $inc: { referralEarnings: 0 }
+            }
+          );
+        }
+      }
+
       // Create new user
       const newUser = {
         email,
@@ -36,6 +63,9 @@ export async function POST(req: Request) {
         claims: {},
         achievements: [],
         transactions: [],
+        referrals: [],
+        referralEarnings: 0,
+        referredBy,
         lastTick: Date.now(),
         createdAt: new Date(),
         role: 'user', // 'user' or 'admin'
@@ -50,7 +80,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         token,
-        user: { email, balance: 500, role: 'user' }
+        user: { email, balance: 500, role: 'user', referredBy }
       });
     }
 

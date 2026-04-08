@@ -393,7 +393,7 @@ export default function GameDashboard({ balance, setBalance, email, token, onLog
           )}
           {activeTab === "bonus" && <BonusTab balance={balance} setBalance={setBalance} />}
           {activeTab === "finance" && <FinanceTab balance={balance} setBalance={setBalance} email={email} token={token} />}
-          {activeTab === "partners" && <PartnersTab />}
+          {activeTab === "partners" && <PartnersTab email={email} />}
         </main>
       </div>
     </div>

@@ -1,11 +1,49 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-export default function PartnersTab() {
+interface PartnersTabProps {
+  email: string
+}
+
+export default function PartnersTab({ email }: PartnersTabProps) {
   const [copied, setCopied] = useState(false)
-  const referralLink = "https://melqo.game/ref/USER123"
+  const [referralData, setReferralData] = useState<any>({
+    referrals: [],
+    referralEarnings: 0,
+    totalReferrals: 0
+  })
+  const [loading, setLoading] = useState(true)
+  const [referralLink, setReferralLink] = useState("")
+
+  // Build referral link with current host
+  useEffect(() => {
+    const host = typeof window !== 'undefined' ? window.location.origin : 'https://melqo.app'
+    setReferralLink(`${host}/?ref=${encodeURIComponent(email)}`)
+  }, [email])
+
+  // Fetch referral data
+  useEffect(() => {
+    const fetchReferralData = async () => {
+      try {
+        const token = localStorage.getItem('melqo-token')
+        const res = await fetch('/api/referral', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setReferralData(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch referral data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReferralData()
+  }, [])
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink)
@@ -13,22 +51,24 @@ export default function PartnersTab() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const referrals = [
-    { id: 1, username: "Player_42", level: 1, earnings: 25, date: "2026-04-05" },
-    { id: 2, username: "GoldMiner", level: 1, earnings: 15, date: "2026-04-04" },
-    { id: 3, username: "CryptoKing", level: 2, earnings: 8, date: "2026-04-03" },
-  ]
-
   const levels = [
     { level: 1, percentage: 7, description: "Direct referrals" },
     { level: 2, percentage: 3, description: "Referrals of your referrals" },
     { level: 3, percentage: 1, description: "3rd level referrals" },
   ]
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <div className="w-16 h-16 border-4 border-[#d4a534] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* Referral Link Card */}
-      <div 
+      <div
         className="p-6 rounded-lg"
         style={{
           background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
@@ -37,6 +77,9 @@ export default function PartnersTab() {
         }}
       >
         <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Your Referral Link</h2>
+        <p className="text-sm text-[#6b5344] mb-3">
+          Share this link and earn 7% of your referrals' earnings!
+        </p>
         <div className="flex gap-2">
           <div className="flex-1 bg-white/60 rounded-lg px-4 py-3 border border-[#c4a574]">
             <span className="text-[#4a3728] text-sm md:text-base truncate block">{referralLink}</span>
@@ -45,28 +88,28 @@ export default function PartnersTab() {
             onClick={handleCopy}
             className="bg-gradient-to-b from-[#f5d742] to-[#d4a534] hover:from-[#f5d742] hover:to-[#c49a2f] text-[#4a3728] font-bold rounded-lg border-2 border-[#a67c00]"
           >
-            {copied ? "Copied!" : "Copy"}
+            {copied ? "✓ Copied!" : "📋 Copy"}
           </Button>
         </div>
-        
+
         <div className="mt-4 grid grid-cols-3 gap-4 text-center">
           <div className="p-3 bg-[#e8d5b0]/50 rounded-lg border-2 border-[#c4a574]">
-            <p className="text-2xl font-bold text-[#d4a534]">3</p>
+            <p className="text-2xl font-bold text-[#d4a534]">{referralData.totalReferrals || 0}</p>
             <p className="text-sm text-[#6b5344]">Total Referrals</p>
           </div>
           <div className="p-3 bg-[#e8d5b0]/50 rounded-lg border-2 border-[#c4a574]">
-            <p className="text-2xl font-bold text-[#d4a534]">48</p>
+            <p className="text-2xl font-bold text-[#d4a534]">{(referralData.referralEarnings || 0).toFixed(0)}</p>
             <p className="text-sm text-[#6b5344]">Total Earnings</p>
           </div>
           <div className="p-3 bg-[#e8d5b0]/50 rounded-lg border-2 border-[#c4a574]">
-            <p className="text-2xl font-bold text-[#d4a534]">2</p>
-            <p className="text-sm text-[#6b5344]">Active Today</p>
+            <p className="text-2xl font-bold text-[#d4a534]">7%</p>
+            <p className="text-sm text-[#6b5344]">Commission</p>
           </div>
         </div>
       </div>
 
       {/* Referral Levels */}
-      <div 
+      <div
         className="p-6 rounded-lg"
         style={{
           background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
@@ -77,7 +120,7 @@ export default function PartnersTab() {
         <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Referral Program</h2>
         <div className="space-y-3">
           {levels.map(level => (
-            <div 
+            <div
               key={level.level}
               className="p-4 rounded-lg bg-[#e8d5b0]/50 border-2 border-[#c4a574] flex items-center justify-between"
             >
@@ -100,7 +143,7 @@ export default function PartnersTab() {
       </div>
 
       {/* Referral List */}
-      <div 
+      <div
         className="p-6 rounded-lg"
         style={{
           background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
@@ -109,11 +152,11 @@ export default function PartnersTab() {
         }}
       >
         <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Your Referrals</h2>
-        {referrals.length > 0 ? (
+        {referralData.referrals && referralData.referrals.length > 0 ? (
           <div className="space-y-3">
-            {referrals.map(ref => (
-              <div 
-                key={ref.id}
+            {referralData.referrals.map((ref: any, idx: number) => (
+              <div
+                key={idx}
                 className="p-4 rounded-lg bg-[#e8d5b0]/50 border-2 border-[#c4a574] flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
@@ -124,15 +167,15 @@ export default function PartnersTab() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-bold text-[#4a3728]">{ref.username}</p>
-                    <p className="text-xs text-[#6b5344]">Level {ref.level} - Joined {ref.date}</p>
+                    <p className="font-bold text-[#4a3728]">{ref.email}</p>
+                    <p className="text-xs text-[#6b5344]">Level {ref.level} - Joined {new Date(ref.referredAt).toLocaleDateString()}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#d4a534">
                     <circle cx="12" cy="12" r="10" />
                   </svg>
-                  <span className="font-bold text-[#4a3728]">+{ref.earnings}</span>
+                  <span className="font-bold text-[#4a3728]">+{ref.earnings || 0}</span>
                 </div>
               </div>
             ))}
