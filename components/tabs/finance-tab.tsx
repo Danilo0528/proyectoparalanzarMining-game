@@ -113,8 +113,24 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
       return
     }
 
-    // Check if wallet is configured before attempting deposit
-    const selectedWallet = wallets.find(w => w.name === selectedMethod?.name)
+    // Map payment method names to wallet names in DB
+    const methodToWalletName: Record<string, string> = {
+      'BITCOIN': 'Bitcoin',
+      'DOGECOIN': 'Dogecoin',
+      'LITECOIN': 'Litecoin',
+      'TRX': 'Tron',
+      'TON': 'Toncoin',
+      'BINANCE BEP20': 'BNB',
+      'TETHER TRC20': 'USDT',
+      'TETHER BEP20': 'USDT',
+      'FAUCETPAY': 'Bitcoin',
+    }
+
+    // Check if wallet is configured before attempting deposit (with name mapping)
+    const walletName = methodToWalletName[selectedMethod?.name] || selectedMethod?.name
+    const selectedWallet = wallets.find(w =>
+      w.name.toLowerCase() === walletName.toLowerCase()
+    )
     if (!selectedWallet || !selectedWallet.enabled || !selectedWallet.address?.trim()) {
       alert(`⚠️ Deposits via ${selectedMethod?.name} are not available yet. Admin has not configured this wallet.`)
       return
@@ -293,12 +309,28 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
     )
   }
 
+  // Map payment method names to wallet names in DB
+  const methodToWalletName: Record<string, string> = {
+    'BITCOIN': 'Bitcoin',
+    'DOGECOIN': 'Dogecoin',
+    'LITECOIN': 'Litecoin',
+    'TRX': 'Tron',
+    'TON': 'Toncoin',
+    'BINANCE BEP20': 'BNB',
+    'TETHER TRC20': 'USDT',
+    'TETHER BEP20': 'USDT',
+    'FAUCETPAY': 'Bitcoin',
+  }
+
   if (activeView === "topup_detail" && selectedMethod) {
     const giveUSD = parseFloat(payoutInput) || 0
     const getGold = giveUSD * 1000
 
-    // Find the configured wallet for this method
-    const configuredWallet = wallets.find(w => w.name === selectedMethod.name)
+    // Find the configured wallet for this method (mapped name)
+    const walletName = methodToWalletName[selectedMethod.name] || selectedMethod.name
+    const configuredWallet = wallets.find(w =>
+      w.name.toLowerCase() === walletName.toLowerCase()
+    )
     const isWalletConfigured = configuredWallet && configuredWallet.enabled && configuredWallet.address?.trim()
 
     return (

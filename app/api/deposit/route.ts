@@ -26,8 +26,23 @@ export async function POST(req: Request) {
     const deposits = db.collection('deposits');
     const wallets = db.collection('wallets');
 
+    // Map payment method names to wallet names in DB
+    const methodToWalletName: Record<string, string> = {
+      'BITCOIN': 'Bitcoin',
+      'DOGECOIN': 'Dogecoin',
+      'LITECOIN': 'Litecoin',
+      'TRX': 'Tron',
+      'TON': 'Toncoin',
+      'BINANCE BEP20': 'BNB',
+      'TETHER TRC20': 'USDT',
+      'TETHER BEP20': 'USDT',
+      'FAUCETPAY': 'Bitcoin',
+    };
+
+    const walletName = methodToWalletName[method] || method;
+
     // CRITICAL: Validate that the wallet for this method is configured and enabled
-    const walletConfig = await wallets.findOne({ name: method.toUpperCase() });
+    const walletConfig = await wallets.findOne({ name: walletName });
 
     if (!walletConfig || !walletConfig.enabled || !walletConfig.address?.trim()) {
       return NextResponse.json({
