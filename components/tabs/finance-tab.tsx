@@ -113,6 +113,20 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
       return
     }
 
+    // Check if wallet is configured before attempting deposit
+    const selectedWallet = wallets.find(w => w.name === selectedMethod?.name)
+    if (!selectedWallet || !selectedWallet.enabled || !selectedWallet.address?.trim()) {
+      alert(`⚠️ Deposits via ${selectedMethod?.name} are not available yet. Admin has not configured this wallet.`)
+      return
+    }
+
+    // Check minimum deposit
+    const minDeposit = selectedWallet.minDepositUSD || 5
+    if (amount < minDeposit) {
+      alert(`Minimum deposit for ${selectedMethod?.name} is $${minDeposit} USD`)
+      return
+    }
+
     try {
       const res = await fetch('/api/deposit', {
         method: 'POST',
@@ -142,7 +156,7 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
           status: "pending_verification"
         }, ...transactions])
 
-        alert(`✅ ${data.coinsAdded.toLocaleString()} gold coins credited to your account!`)
+        alert(`✅ ${data.coinsAdded.toLocaleString()} gold coins credited to your account!\n\n⏳ Your deposit is pending admin verification.`)
         setActiveView("list")
       } else {
         alert(data.error || "Top-up failed")
