@@ -7,8 +7,30 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Melqo - Mining Game',
-  description: 'Mine gold and build your empire',
+  title: 'Melqo - Earn Crypto by Mining',
+  description: 'Join Melqo Mining Game. Buy miners, build your empire, and earn real cryptocurrency daily. A fun and rewarding ecosystem.',
+  keywords: 'mining game, earn crypto, play to earn, melqo, bitcoin, usdt',
+  openGraph: {
+    title: 'Melqo - Earn Crypto by Mining',
+    description: 'Join Melqo Mining Game. Buy miners, build your empire, and earn real cryptocurrency daily.',
+    url: 'https://melqo.app',
+    siteName: 'Melqo',
+    images: [
+      {
+        url: '/images/bg-landscape.jpg', // Using existing background for og
+        width: 1200,
+        height: 630,
+        alt: 'Melqo Mining Environment',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Melqo - Earn Crypto by Mining',
+    description: 'Start your mining adventure today and earn real crypto.',
+  },
   generator: 'v0.app',
   icons: {
     icon: [

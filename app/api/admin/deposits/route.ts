@@ -80,10 +80,24 @@ export async function POST(req: Request) {
       );
 
       // REVOKE the credited balance
-      await users.updateOne(
-        { email: deposit.email },
-        { $inc: { balance: -deposit.coinsReceived } }
-      );
+      const user = await users.findOne({ email: deposit.email });
+      if (user) {
+        const newBalance = (user.balance || 0) - deposit.coinsReceived;
+        const isFraudulent = newBalance < 0; // they spent the unverified coins
+        
+        await users.updateOne(
+          { email: deposit.email },
+          { 
+            $set: { 
+              balance: isFraudulent ? 0 : newBalance, // Set to 0 if negative
+              ...(isFraudulent && { 
+                flagged: true, 
+                flagReason: 'Fraudulent deposit rejection (coins already spent)' 
+              })
+            }
+          }
+        );
+      }
 
       // Update transaction status
       await users.updateOne(

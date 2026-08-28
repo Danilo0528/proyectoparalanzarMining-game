@@ -9,7 +9,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { amount, method } = await req.json();
+    const { amount, method, txHash } = await req.json();
     const email = auth.email;
 
     if (!amount || amount <= 0) {
@@ -18,6 +18,10 @@ export async function POST(req: Request) {
 
     if (!method) {
       return NextResponse.json({ error: 'Payment method is required' }, { status: 400 });
+    }
+    
+    if (!txHash || !txHash.trim()) {
+      return NextResponse.json({ error: 'Transaction hash is required' }, { status: 400 });
     }
 
     const client = await clientPromise;
@@ -41,8 +45,12 @@ export async function POST(req: Request) {
 
     const walletName = methodToWalletName[method] || method;
 
+    let query: any = { name: walletName };
+    if (method === 'TETHER TRC20') query.network = 'TRC20';
+    if (method === 'TETHER BEP20') query.network = 'BEP20';
+
     // CRITICAL: Validate that the wallet for this method is configured and enabled
-    const walletConfig = await wallets.findOne({ name: walletName });
+    const walletConfig = await wallets.findOne(query);
 
     if (!walletConfig || !walletConfig.enabled || !walletConfig.address?.trim()) {
       return NextResponse.json({
@@ -81,6 +89,7 @@ export async function POST(req: Request) {
       amountUSD: amount,
       coinsReceived: coinsToAdd,
       method,
+      txHash: txHash.trim(),
       walletAddress: walletConfig.address, // Record which wallet was used
       date: new Date().toISOString().split('T')[0],
       status: 'pending_verification', // pending_verification, verified, rejected
@@ -100,6 +109,7 @@ export async function POST(req: Request) {
             type: 'deposit',
             amount: coinsToAdd,
             method,
+            txHash: txHash.trim(),
             date: depositRequest.date,
             status: 'pending_verification',
             creditedImmediately: true

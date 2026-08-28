@@ -6,6 +6,7 @@ import MinersTab from "@/components/tabs/miners-tab"
 import BonusTab from "@/components/tabs/bonus-tab"
 import FinanceTab from "@/components/tabs/finance-tab"
 import PartnersTab from "@/components/tabs/partners-tab"
+import LeaderboardTab from "@/components/tabs/leaderboard-tab"
 
 interface GameDashboardProps {
   balance: number
@@ -153,7 +154,7 @@ const initialIslands: IslandData[] = [
   },
 ]
 
-type TabType = "miners" | "bonus" | "finance" | "partners"
+type TabType = "miners" | "bonus" | "finance" | "partners" | "leaderboard"
 
 import { usePersistentState } from "@/hooks/use-persistent-state"
 
@@ -323,6 +324,7 @@ export default function GameDashboard({ balance, setBalance, email, token, onLog
     { id: "bonus", label: "BONUS" },
     { id: "finance", label: "FINANCE" },
     { id: "partners", label: "PARTNERS" },
+    { id: "leaderboard", label: "TOP 10" },
   ]
 
   return (
@@ -394,6 +396,7 @@ export default function GameDashboard({ balance, setBalance, email, token, onLog
           {activeTab === "bonus" && <BonusTab balance={balance} setBalance={setBalance} />}
           {activeTab === "finance" && <FinanceTab balance={balance} setBalance={setBalance} email={email} token={token} />}
           {activeTab === "partners" && <PartnersTab email={email} />}
+          {activeTab === "leaderboard" && <LeaderboardTab />}
         </main>
       </div>
     </div>

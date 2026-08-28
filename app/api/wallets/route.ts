@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
-import { getEnabledWallets } from '@/lib/wallet-config';
 
 // GET: Get enabled wallets for users (public endpoint)
 export async function GET(req: Request) {
@@ -10,11 +9,24 @@ export async function GET(req: Request) {
     const wallets = db.collection('wallets');
 
     const allWallets = await wallets.find({}).toArray();
-    
-    // Return only enabled wallets with addresses
-    const enabledWallets = allWallets.filter(w => w.enabled && w.address?.trim());
 
-    return NextResponse.json({ 
+    console.log('=== WALLETS IN DB ===');
+    allWallets.forEach(w => {
+      console.log(`ID: ${w.id}, Name: ${w.name}, Enabled: ${w.enabled}, HasAddress: ${!!w.address?.trim()}`);
+    });
+    console.log('=====================');
+
+    // Return only enabled wallets with addresses
+    const enabledWallets = allWallets.filter(w => {
+      const isEnabled = w.enabled === true;
+      const hasAddress = w.address && w.address.trim().length > 0;
+      return isEnabled && hasAddress;
+    });
+
+    console.log(`Enabled wallets: ${enabledWallets.length}`);
+    enabledWallets.forEach(w => console.log(`  - ${w.name}: ${w.address?.substring(0, 20)}...`));
+
+    return NextResponse.json({
       wallets: enabledWallets.map(w => ({
         id: w.id,
         name: w.name,

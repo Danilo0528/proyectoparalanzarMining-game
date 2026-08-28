@@ -71,7 +71,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen w-full bg-cover bg-center bg-no-repeat relative overflow-hidden"
       style={{
         backgroundImage: "url('/images/bg-landscape.jpg')"
@@ -79,13 +79,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     >
       {/* Overlay for better readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-sky-400/20 to-sky-600/30" />
-      
+
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header */}
         <header className="flex items-center justify-between px-4 py-4 md:px-8">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 
+            <h1
               className="text-4xl md:text-5xl font-bold tracking-wider"
               style={{
                 color: "#d4a534",
@@ -97,7 +97,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
 
           {/* Create Account Button */}
-          <Button 
+          <Button
             onClick={() => setIsRegistering(true)}
             className="bg-gradient-to-b from-[#f5d742] to-[#d4a534] hover:from-[#f5d742] hover:to-[#c49a2f] text-[#4a3728] font-bold px-6 py-2 rounded-full shadow-lg border-2 border-[#a67c00]"
           >
@@ -116,7 +116,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         {/* Main Content */}
         <div className="flex-1 flex items-start justify-start px-4 md:px-8 mt-8 md:mt-12">
           {/* Login Form */}
-          <div 
+          <div
             className="w-full max-w-md p-6 md:p-8 rounded-lg shadow-2xl relative"
             style={{
               background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 50%, #d9c4a0 100%)",
@@ -125,13 +125,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             }}
           >
             {/* Paper texture overlay */}
-            <div 
+            <div
               className="absolute inset-0 rounded-lg opacity-20 pointer-events-none"
               style={{
                 backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")"
               }}
             />
-            
+
             <div className="relative z-10">
               <h2 className="text-2xl font-bold text-center text-[#4a3728] mb-6 tracking-wide">
                 {isRegistering ? "REGISTRATION" : "AUTHORIZATION"}
@@ -196,7 +196,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
                 <div className="flex items-center justify-between pt-2">
                   {!isRegistering && (
-                    <button 
+                    <button
                       type="button"
                       className="text-sm text-[#6b5344] hover:text-[#4a3728] underline"
                     >
@@ -204,7 +204,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     </button>
                   )}
                   {isRegistering && (
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setIsRegistering(false)}
                       className="text-sm text-[#6b5344] hover:text-[#4a3728] underline"
@@ -212,7 +212,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                       Already have an account?
                     </button>
                   )}
-                  
+
                   <Button
                     type="submit"
                     disabled={isLoading}
@@ -236,6 +236,24 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             priority
           />
         </div>
+
+        {/* Footer */}
+        <footer className="mt-auto py-6 px-4 md:px-8 flex flex-col md:flex-row items-center justify-between z-20 relative">
+          <div className="text-[#4a3728] font-bold text-sm mb-4 md:mb-0 drop-shadow-md">
+            © {new Date().getFullYear()} Melqo Mining Game. All rights reserved.
+          </div>
+
+          <div className="flex items-center gap-6">
+            <a href="https://t.me/MelqoSupport" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#4a3728] hover:text-[#d4a534] font-bold transition-colors">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current border border-[#4a3728] rounded-full p-0.5">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.32-.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.888-.662 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+              </svg>
+              Telegram Support
+            </a>
+            <a href="#" className="text-sm text-[#4a3728] hover:text-[#d4a534] underline underline-offset-2 font-bold">Terms of Service</a>
+            <a href="#" className="text-sm text-[#4a3728] hover:text-[#d4a534] underline underline-offset-2 font-bold">Privacy Policy</a>
+          </div>
+        </footer>
       </div>
     </div>
   )
@@ -280,7 +298,7 @@ function StatCard({ icon, label, value }: StatCardProps) {
   }
 
   return (
-    <div 
+    <div
       className="flex items-center gap-3 px-4 py-2 rounded-lg min-w-[140px]"
       style={{
         background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",

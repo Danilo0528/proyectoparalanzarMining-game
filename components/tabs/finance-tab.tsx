@@ -39,25 +39,43 @@ const METHOD_TO_WALLET: Record<string, string> = {
 }
 
 export default function FinanceTab({ balance, setBalance, email, token }: FinanceTabProps) {
-  const [activeView, setActiveView] = useState<"list" | "payout_detail" | "topup_detail" | "wallets">("list")
+  const [activeView, setActiveView] = useState<"list" | "payout_detail" | "topup_detail">("list")
   const [selectedMethod, setSelectedMethod] = useState<typeof PAYMENT_METHODS[0] | null>(null)
   const [wallets, setWallets] = useState<any[]>([])
+  const [walletsLoading, setWalletsLoading] = useState(true)
   const [transactions, setTransactions] = usePersistentState<any[]>("melqo-transactions", [])
   const [payoutInput, setPayoutInput] = useState("")
   const [payoutAddress, setPayoutAddress] = useState("")
+  const [txHash, setTxHash] = useState("")
   const [depositLoading, setDepositLoading] = useState(false)
 
   // Fetch enabled wallets from backend
   useEffect(() => {
+    setWalletsLoading(true)
     fetch('/api/wallets')
       .then(res => res.json())
-      .then(data => setWallets(data.wallets || []))
-      .catch(err => console.error('Failed to fetch wallets:', err))
+      .then(data => {
+        setWallets(data.wallets || [])
+        setWalletsLoading(false)
+      })
+      .catch(err => {
+        console.error('Failed to fetch wallets:', err)
+        setWalletsLoading(false)
+      })
   }, [])
 
   // Helper: find wallet by payment method
   const findWallet = (methodName: string) => {
     const walletName = METHOD_TO_WALLET[methodName] || methodName
+    
+    // For USDT, we need to match the specific network
+    if (methodName === 'TETHER TRC20') {
+      return wallets.find(w => w.name.toLowerCase() === 'usdt' && w.network === 'TRC20')
+    }
+    if (methodName === 'TETHER BEP20') {
+      return wallets.find(w => w.name.toLowerCase() === 'usdt' && w.network === 'BEP20')
+    }
+    
     return wallets.find(w => w.name.toLowerCase() === walletName.toLowerCase())
   }
 
@@ -129,8 +147,13 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
     }
 
     const wallet = findWallet(selectedMethod?.name || '')
-    if (!wallet || !wallet.enabled || !wallet.address?.trim()) {
+    if (!wallet || !wallet.address?.trim()) {
       alert(`⚠️ Deposits via ${selectedMethod?.name} are not available yet. Admin has not configured this wallet.`)
+      return
+    }
+
+    if (!txHash.trim()) {
+      alert("Please enter the Transaction Hash / TxID or sender wallet address.")
       return
     }
 
@@ -151,7 +174,8 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
         },
         body: JSON.stringify({
           amount,
-          method: selectedMethod?.name
+          method: selectedMethod?.name,
+          txHash: txHash.trim()
         })
       })
 
@@ -164,12 +188,14 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
           type: "deposit",
           amount: data.coinsAdded,
           method: selectedMethod?.name,
+          txHash: txHash.trim(),
           date: new Date().toISOString().split('T')[0],
           status: "pending_verification"
         }, ...transactions])
 
         alert(`✅ ${data.coinsAdded.toLocaleString()} gold coins will be credited within 1-3 minutes!\n\n⏳ Your deposit is being verified by admin.`)
         setActiveView("list")
+        setTxHash("")
       } else {
         alert(data.error || "Top-up failed")
       }
@@ -211,6 +237,76 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
       </span>
     </div>
   )
+
+  const renderCoinIcon = (method: any, type: "topup" | "payout") => {
+    const CoinSvg = () => {
+      switch (method.id) {
+        case 'bitcoin': return (
+          <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#F7931A"/>
+            <path d="M21.841 13.916c.38-2.545-1.523-3.905-4.086-4.793l.835-3.35-2.037-.507-.812 3.255c-.535-.133-1.085-.259-1.636-.381l.823-3.3-2.037-.507-.834 3.351c-.443-.102-.876-.201-1.285-.306l.001-.005-2.809-.7-1.12 1.54s1.512.348 1.482.37c.827.206.977.754.952 1.189l-1.905 7.64c-.033.093-.086.236-.255.234.025.029-1.482-.37-1.482-.37l-1.022 1.573 2.658.662c.5.125.992.257 1.487.385l-.841 3.376 2.037.507.834-3.35c.548.146 1.09.284 1.62.416l-.828 3.324 2.036.507.842-3.377c3.425.65 6.002.392 7.07-2.673.859-2.463-.092-3.882-1.815-4.814 1.295-.298 2.27-.84 2.531-2.14zM18.82 18.25c-.687 2.766-5.32 1.309-6.822.935L12.63 16.63c1.501.374 5.518-.088 6.19 1.62zm.685-4.87c-.624 2.51-4.493 1.242-5.753.928l.582-2.336c1.26.314 5.811.144 5.171 1.408z" fill="#FFF"/>
+          </svg>
+        );
+        case 'dogecoin': return (
+          <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#C2A633"/>
+            <text x="16" y="21" fontSize="16" fontFamily="Arial" fontWeight="bold" fill="#FFF" textAnchor="middle">Ð</text>
+          </svg>
+        );
+        case 'litecoin': return (
+          <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#345D9D"/>
+            <path d="M11.66 21.942l2.674-10.457h2.646l-1.928 7.5c2.404-.792 5.093-1.656 7.498-2.433l-.69 2.684-9.35 3.018-2.613-.263 1.763-7.05h-1.916l.666-2.585h1.914l-.664 2.585h.002z" fill="#FFF"/>
+          </svg>
+        );
+        case 'trx': return (
+          <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#EB3A39"/>
+            <path d="M9.544 11.233L15.7 6.13a.625.625 0 01.8 0l6.155 5.103a.625.625 0 01.077.886l-6.233 7.854a.625.625 0 01-1.026-.008L9.467 12.12a.625.625 0 01.077-.887zm1.68 1.487l4.312-3.578v6.924L11.224 12.72zm9.155 0l-4.312 3.346v-6.924l4.312 3.578zM16.536 21.68v-7.8l5.352 2.673-5.352 5.127zm-.832 0l-5.352-5.127 5.352-2.673v7.8z" fill="#FFF"/>
+          </svg>
+        );
+        case 'ton': return (
+          <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#0098EA"/>
+            <path d="M16 6.5L6.5 16l4 4 5.5-11 5.5 11 4-4-9.5-9.5zM16 25l-4-4 4 2 4-2-4 4z" fill="#FFF"/>
+          </svg>
+        );
+        case 'binance': return (
+          <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#F3BA2F"/>
+            <path d="M11.835 15l4.162-4.161L20.16 15h2.825l-6.988-6.987L9.01 15h2.825zm0 1.99H9.01l6.988 6.988L22.986 16.99H20.16L15.998 21.15l-4.163-4.16z" fill="#FFF"/>
+            <path d="M13.684 15.996L15.997 13.683l2.314 2.313-2.314 2.313-2.313-2.313z" fill="#FFF"/>
+          </svg>
+        );
+        case 'tether_trc20':
+        case 'tether_bep20':
+          return (
+            <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="16" fill="#26A17B"/>
+              <path d="M17.818 13.064v4.321h2.247v1.89h-5.918v-1.89h2.246v-4.321c-2.736-.184-4.887-.938-4.887-1.848 0-.91 2.15-1.664 4.887-1.848v-2.03h1.425v2.03c2.736.184 4.887.938 4.887 1.848 0 .91-2.15 1.664-4.887 1.848z" fill="#FFF"/>
+            </svg>
+          );
+        case 'faucetpay': return (
+          <svg viewBox="0 0 32 32" className="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#136AF4"/>
+            <text x="16" y="21" fontSize="14" fontFamily="Arial" fontWeight="bold" fill="#FFF" textAnchor="middle">FP</text>
+          </svg>
+        );
+        default: return (
+          <div className="w-full h-full relative overflow-hidden rounded-full">
+            <div className={`absolute inset-0 ${type === 'topup' ? 'bg-[#4a90e2]' : 'bg-[#e05634]'}`}></div>
+            <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] tracking-tighter">C</div>
+          </div>
+        );
+      }
+    };
+
+    return (
+      <div className="w-8 h-8 mr-4 flex-shrink-0 relative flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm rounded-full">
+        <CoinSvg />
+      </div>
+    );
+  }
 
   // PAYOUT DETAIL VIEW
   if (activeView === "payout_detail" && selectedMethod) {
@@ -289,8 +385,21 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
   if (activeView === "topup_detail" && selectedMethod) {
     const giveUSD = parseFloat(payoutInput) || 0
     const getGold = giveUSD * 1000
+
+    // Show loading while wallets are being fetched
+    if (walletsLoading) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-[#d4a534] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-[#4a3728] font-bold">Loading wallet addresses...</p>
+          </div>
+        </div>
+      )
+    }
+
     const wallet = findWallet(selectedMethod.name)
-    const isWalletConfigured = wallet && wallet.enabled && wallet.address?.trim()
+    const isWalletConfigured = wallet && wallet.address?.trim()
 
     return (
         <div className="flex flex-col items-center justify-center h-full animate-in fade-in zoom-in duration-300 py-8">
@@ -337,7 +446,16 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
                 </div>
               </div>
 
-              <div className="pt-8 flex justify-center">
+              <div>
+                <label className="text-sm font-bold text-[#5c442c] block mb-2 px-1">Transaction Hash / TxID / From Address</label>
+                <div className="bg-[#fef9f0] flex items-center p-2 rounded-sm shadow-inner relative group border border-[#c4a574]">
+                  <span className="text-lg mr-2 pl-2">🔗</span>
+                  <Input type="text" value={txHash} onChange={e => setTxHash(e.target.value)} placeholder="0x..." className="border-0 bg-transparent text-sm font-bold text-[#5c442c] w-full focus-visible:ring-0 shadow-none px-0" />
+                </div>
+                <p className="text-[10px] text-[#6b5344] mt-1 ml-1">Required to verify your payment!</p>
+              </div>
+
+              <div className="pt-6 flex justify-center">
                 <Button
                   onClick={handleTopup}
                   disabled={!isWalletConfigured || depositLoading}
@@ -356,44 +474,6 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
       )
   }
 
-  // WALLETS VIEW
-  if (activeView === "wallets") {
-    return (
-      <div className="max-w-4xl mx-auto animate-in fade-in zoom-in duration-300">
-        <Button variant="ghost" onClick={() => setActiveView("list")} className="mb-4 text-[#5c442c] hover:bg-[#d6c19f]/30">← Back</Button>
-
-        <div className="p-6 bg-[#f5e6c8] rounded-lg border-2 border-[#c4a574]">
-          <h2 className="text-2xl font-bold text-[#4a3728] mb-4">💼 Wallet Addresses for Deposits</h2>
-          <p className="text-sm text-[#6b5344] mb-6">Send your payment to any of these wallets. After sending, your coins will be credited within 1-3 minutes.</p>
-
-          <div className="space-y-4">
-            {wallets.map((wallet) => (
-              <div key={wallet.id} className="p-4 bg-white rounded-lg border-2 border-[#c4a574] shadow-md">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <h3 className="font-bold text-lg text-[#4a3728]">{wallet.name} {wallet.network && `(${wallet.network})`}</h3>
-                    <p className="text-xs text-gray-600">Min: ${wallet.minDepositUSD} USD</p>
-                  </div>
-                  <span className="px-3 py-1 bg-green-500 text-white text-xs font-bold rounded-full">✅ Active</span>
-                </div>
-
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-xs text-gray-600 mb-1">Wallet Address:</p>
-                  <p className="font-mono text-sm text-[#4a3728] break-all select-all">{wallet.address}</p>
-                </div>
-
-                {wallet.instructions && <p className="mt-2 text-xs text-[#6b5344] italic">📝 {wallet.instructions}</p>}
-
-                <div className="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-800">
-                  💡 After sending payment, coins will be credited within 1-3 minutes.
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // MAIN LIST VIEW
   return (
@@ -404,12 +484,6 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
         {renderRibbon("TOP UP")}
         {renderConversionRate("$1 = 1 000 🪙")}
 
-        {wallets.length > 0 && (
-          <Button onClick={() => setActiveView("wallets")} className="w-full mb-4 bg-green-500 hover:bg-green-600 text-white font-bold py-3">
-            💼 View Wallet Addresses ({wallets.length} available)
-          </Button>
-        )}
-
         <div className="space-y-1">
           {PAYMENT_METHODS.map(method => (
             <button
@@ -418,10 +492,7 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
               className="w-full bg-[#fdf9f0] border-b border-[#e8d5b0] hover:bg-[#fffdf7] group transition-colors flex items-center p-3 relative shadow-sm"
               style={{ clipPath: "polygon(2% 0, 98% 0, 100% 100%, 0 100%)" }}
             >
-              <div className="w-8 h-8 mr-4 flex-shrink-0 relative overflow-hidden">
-                 <div className="absolute inset-0 bg-[#4a90e2] rotate-12 rounded-sm group-hover:rotate-45 transition-transform"></div>
-                 <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] tracking-tighter">C</div>
-              </div>
+              {renderCoinIcon(method, "topup")}
               <span className="font-bold text-[#5c442c] text-sm md:text-base flex-1 text-left tracking-wide">{method.name}</span>
             </button>
           ))}
@@ -441,10 +512,7 @@ export default function FinanceTab({ balance, setBalance, email, token }: Financ
               className="w-full bg-[#fdf9f0] border-b border-[#e8d5b0] hover:bg-[#fffdf7] group transition-colors flex items-center p-3 relative shadow-sm"
               style={{ clipPath: "polygon(2% 0, 98% 0, 100% 100%, 0 100%)" }}
             >
-              <div className="w-8 h-8 mr-4 flex-shrink-0 relative overflow-hidden">
-                 <div className="absolute inset-0 bg-[#e05634] rounded-full group-hover:scale-110 transition-transform"></div>
-                 <div className="absolute inset-0 flex items-center justify-center text-white font-black text-[10px] tracking-tighter">C</div>
-              </div>
+              {renderCoinIcon(method, "payout")}
               <span className="font-bold text-[#5c442c] text-sm md:text-base flex-1 text-left tracking-wide">{method.name}</span>
             </button>
           ))}

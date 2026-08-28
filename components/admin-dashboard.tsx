@@ -33,6 +33,7 @@ interface DepositRequest {
   status: "pending_verification" | "verified" | "rejected"
   creditedImmediately: boolean
   notes?: string
+  txHash?: string
 }
 
 interface WithdrawalRequest {
@@ -550,7 +551,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                     <th className="text-left p-2 text-[#4a3728]">User</th>
                     <th className="text-left p-2 text-[#4a3728]">USD</th>
                     <th className="text-left p-2 text-[#4a3728]">Coins</th>
-                    <th className="text-left p-2 text-[#4a3728]">Method</th>
+                    <th className="text-left p-2 text-[#4a3728]">Method/TxHash</th>
                     <th className="text-left p-2 text-[#4a3728]">Date</th>
                     <th className="text-left p-2 text-[#4a3728]">Status</th>
                     <th className="text-left p-2 text-[#4a3728]">Actions</th>
@@ -562,7 +563,10 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                       <td className="p-2 text-sm">{deposit.email}</td>
                       <td className="p-2 font-bold">${deposit.amountUSD}</td>
                       <td className="p-2 text-green-600 font-bold">+{deposit.coinsReceived.toLocaleString()}</td>
-                      <td className="p-2">{deposit.method}</td>
+                      <td className="p-2">
+                        <div>{deposit.method}</div>
+                        <div className="text-[10px] font-mono text-gray-500 break-all">{deposit.txHash || '-'}</div>
+                      </td>
                       <td className="p-2 text-sm">{deposit.date}</td>
                       <td className="p-2">
                         <span className={`px-2 py-1 rounded text-xs font-bold ${
