@@ -50,7 +50,7 @@ export default function TopBar({
           </div>
           <div className="hidden items-center gap-1.5 rounded-full border border-arcade-cyan/25 bg-arcade-cyan/10 px-3 py-1.5 text-xs text-arcade-cyan sm:flex">
             <Zap className="h-3.5 w-3.5" />
-            <span className="font-semibold tabular-nums">{incomePerSecond.toFixed(4)}</span>
+            <span className="font-semibold tabular-nums">{incomePerSecond.toFixed(6)}</span>
             <span className="text-arcade-muted">/sec</span>
           </div>
         </div>

@@ -67,7 +67,7 @@ export default function MinersTab({
     ? islands.find((island) => island.id === currentIsland.id + 1)
     : undefined
   const unlock = currentIsland ? getUnlockProgress(currentIsland) : undefined
-  const currentEarnings = Math.floor(currentIsland?.currentEarnings || 0)
+  const currentEarnings = currentIsland?.currentEarnings || 0
   const capacity = currentIsland?.maxCapacity || 2000
 
   return (
@@ -114,7 +114,7 @@ export default function MinersTab({
                 </p>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-display text-4xl tabular-nums text-arcade-gold text-glow-gold md:text-5xl">
-                    {currentEarnings.toLocaleString()}
+                    {currentEarnings.toFixed(4)}
                   </span>
                   <span className="text-sm text-arcade-muted">coins</span>
                 </div>
@@ -137,11 +137,11 @@ export default function MinersTab({
             <Button
               type="button"
               onClick={() => currentIsland && onCollect(currentIsland.id)}
-              disabled={currentEarnings < 1}
+              disabled={Math.floor(currentEarnings) < 1}
               className="arcade-cta h-14 w-full rounded-xl font-display text-base uppercase tracking-[0.18em]"
             >
               <Pickaxe className="h-5 w-5" />
-              Collect {currentEarnings > 0 ? currentEarnings.toLocaleString() : ""}
+              Collect {Math.floor(currentEarnings) > 0 ? Math.floor(currentEarnings).toLocaleString() : ""}
             </Button>
 
             <p className="text-center text-xs text-arcade-muted">
