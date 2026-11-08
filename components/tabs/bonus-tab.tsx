@@ -1,157 +1,179 @@
 "use client"
+
+import { useEffect, useState } from "react"
+import {
+  CalendarCheck,
+  Check,
+  Disc3,
+  Lock,
+  PlayCircle,
+  Share2,
+  Sparkles,
+  Trophy,
+} from "lucide-react"
+import { toast } from "sonner"
 import { usePersistentState } from "@/hooks/use-persistent-state"
 import { Button } from "@/components/ui/button"
+import { BONUSES, claimBonus, getBonusStatus } from "@/lib/game/bonus"
+import type { BonusDefinition } from "@/lib/game/bonus"
+import { ArcadeCard, CoinAmount, ProgressBar, SectionHeading } from "@/components/game/ui"
 
 interface BonusTabProps {
   balance: number
   setBalance: (balance: number) => void
 }
 
+const BONUS_ICONS: Record<number, typeof CalendarCheck> = {
+  1: CalendarCheck,
+  2: PlayCircle,
+  3: Share2,
+  4: Disc3,
+}
+
+const INITIAL_ACHIEVEMENTS = [
+  { id: 1, name: "First Miner", description: "Log in for the first time", reward: 50, claimed: false },
+  { id: 2, name: "Wealthy", description: "Reach 1,000 balance", reward: 100, claimed: false },
+]
+
 export default function BonusTab({ balance, setBalance }: BonusTabProps) {
-  // Store claims as { bonusId: timestamp_of_last_claim }
   const [claims, setClaims] = usePersistentState<Record<number, number>>("melqo-claims", {})
-  
-  const bonuses = [
-    { id: 1, name: "Daily Bonus", amount: 100, icon: "calendar", cooldownHours: 24 },
-    { id: 2, name: "Watch Ad", amount: 25, icon: "play", cooldownHours: 1 },
-    { id: 3, name: "Social Share", amount: 50, icon: "share", cooldownHours: 12 },
-    { id: 4, name: "Lucky Wheel", amount: 75, icon: "wheel", cooldownHours: 6 },
-  ]
+  const [achievements, setAchievements] = usePersistentState("melqo-achievements", INITIAL_ACHIEVEMENTS)
+  const [now, setNow] = useState(() => Date.now())
 
-  const handleClaim = (bonusId: number, amount: number, cooldownHours: number) => {
-    const now = Date.now()
-    const lastClaimTime = claims[bonusId] || 0
-    const cooldownMs = cooldownHours * 60 * 60 * 1000
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
 
-    if (now - lastClaimTime >= cooldownMs) {
-      setBalance(balance + amount)
-      setClaims(prev => ({ ...prev, [bonusId]: now }))
-    }
+  const handleClaim = (bonus: BonusDefinition) => {
+    const result = claimBonus(claims, balance, bonus, now)
+    if (!result.claimed) return
+
+    setBalance(result.balance)
+    setClaims(result.claims)
+    toast.success(`${bonus.name} claimed`, {
+      description: `+${bonus.amount.toLocaleString()} coins added to your balance.`,
+    })
   }
 
-  const getTimeLeft = (bonusId: number, cooldownHours: number) => {
-    const lastClaimTime = claims[bonusId] || 0
-    const cooldownMs = cooldownHours * 60 * 60 * 1000
-    const timeLeftMs = cooldownMs - (Date.now() - lastClaimTime)
-    
-    if (timeLeftMs <= 0) return null
-
-    const hours = Math.floor(timeLeftMs / (1000 * 60 * 60))
-    const minutes = Math.floor((timeLeftMs % (1000 * 60 * 60)) / (1000 * 60))
-    return `${hours}h ${minutes}m left`
-  }
-
-  const [achievements, setAchievements] = usePersistentState("melqo-achievements", [
-    { id: 1, name: "First Miner", description: "Log in for the first time", reward: 50, claimed: false },
-    { id: 2, name: "Wealthy", description: "Reach 1,000 balance", reward: 100, claimed: false },
-  ])
-
-  // Real-time achievement unlock check
   const handleClaimAchievement = (achievementId: number, reward: number) => {
     setBalance(balance + reward)
-    setAchievements(prev => prev.map(a => a.id === achievementId ? { ...a, claimed: true } : a))
+    setAchievements((prev: typeof INITIAL_ACHIEVEMENTS) =>
+      prev.map((achievement) =>
+        achievement.id === achievementId ? { ...achievement, claimed: true } : achievement,
+      ),
+    )
+    toast.success("Achievement unlocked", {
+      description: `+${reward.toLocaleString()} coins added to your balance.`,
+    })
   }
 
   return (
     <div className="space-y-6">
-      {/* Daily Bonuses */}
-      <div 
-        className="p-6 rounded-lg"
-        style={{
-          background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
-          border: "3px solid #c4a574",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
-        }}
-      >
-        <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Daily Bonuses</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {bonuses.map(bonus => {
-            const timeLeft = getTimeLeft(bonus.id, bonus.cooldownHours)
-            const canClaim = !timeLeft
+      <div>
+        <SectionHeading
+          eyebrow="Rewards"
+          title="Daily bonuses"
+          description="Free coins on a timer. Claim them while your miners work."
+          icon={Sparkles}
+        />
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {BONUSES.map((bonus) => {
+            const status = getBonusStatus(claims, bonus, now)
+            const Icon = BONUS_ICONS[bonus.id] ?? Sparkles
 
             return (
-              <div 
-                key={bonus.id}
-                className="p-4 rounded-lg bg-[#e8d5b0]/50 border-2 border-[#c4a574] flex flex-col items-center relative overflow-hidden"
-              >
-                {!canClaim && <div className="absolute inset-0 bg-[#e8d5b0]/70 z-10 flex items-center justify-center flex-col font-bold text-[#4a3728] backdrop-blur-[1px]"><span className="text-xs">Wait</span><span>{timeLeft}</span></div>}
-                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#f5d742] to-[#d4a534] flex items-center justify-center mb-2">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6" fill="#4a3728">
-                    <circle cx="12" cy="12" r="8" />
-                  </svg>
+              <ArcadeCard key={bonus.id} className="relative overflow-hidden p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-arcade-gold/30 bg-arcade-gold/10 text-arcade-gold">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <CoinAmount value={`+${bonus.amount}`} className="text-sm text-arcade-gold" />
                 </div>
-                <h3 className="font-bold text-[#4a3728] text-center">{bonus.name}</h3>
-                <div className="flex items-center gap-1 my-2">
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="#d4a534">
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                  <span className="font-bold text-[#4a3728]">{bonus.amount}</span>
+
+                <h3 className="mt-3 font-display text-lg text-arcade-text">{bonus.name}</h3>
+                <p className="text-xs text-arcade-muted">
+                  {bonus.cooldownHours}h cooldown
+                </p>
+
+                <div className="mt-3">
+                  <ProgressBar value={status.progress} max={100} tone={status.canClaim ? "green" : "violet"} />
                 </div>
+
                 <Button
-                  onClick={() => handleClaim(bonus.id, bonus.amount, bonus.cooldownHours)}
-                  className="w-full bg-gradient-to-b from-[#f5d742] to-[#d4a534] hover:from-[#f5d742] hover:to-[#c49a2f] text-[#4a3728] font-bold rounded-full border-2 border-[#a67c00]"
+                  type="button"
+                  onClick={() => handleClaim(bonus)}
+                  disabled={!status.canClaim}
+                  className="arcade-cta mt-3 h-10 w-full rounded-lg text-xs font-bold"
                 >
-                  Claim
+                  {status.canClaim ? "Claim reward" : status.timeLeftLabel}
                 </Button>
-              </div>
+              </ArcadeCard>
             )
           })}
         </div>
       </div>
 
-      {/* Achievements */}
-      <div 
-        className="p-6 rounded-lg"
-        style={{
-          background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
-          border: "3px solid #c4a574",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
-        }}
-      >
-        <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Achievements</h2>
-        <div className="space-y-3">
-          {achievements.map(achievement => {
-             // Logic to check if unlockable
-             const isMet = (achievement.id === 1) || (achievement.id === 2 && balance >= 1000);
-             return (
-              <div 
+      <div>
+        <SectionHeading
+          eyebrow="Milestones"
+          title="Achievements"
+          description="Unlock one-time rewards as your mining empire grows."
+          icon={Trophy}
+        />
+
+        <ArcadeCard className="mt-4 divide-y divide-arcade-border/60 p-2">
+          {achievements.map((achievement) => {
+            const isMet = achievement.id === 1 || (achievement.id === 2 && balance >= 1000)
+
+            return (
+              <div
                 key={achievement.id}
-                className={`p-4 rounded-lg border-2 flex items-center justify-between ${
-                  achievement.claimed 
-                    ? "bg-[#d4a534]/20 border-[#d4a534]" 
-                    : "bg-[#e8d5b0]/50 border-[#c4a574]"
-                }`}
+                className="flex flex-col gap-3 px-3 py-4 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    achievement.claimed 
-                      ? "bg-gradient-to-b from-[#f5d742] to-[#d4a534]" 
-                      : "bg-[#c4a574]/50"
-                  }`}>
-                    {achievement.claimed ? "✔" : "🔒"}
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span
+                    className={
+                      achievement.claimed
+                        ? "flex h-11 w-11 items-center justify-center rounded-xl border border-arcade-green/40 bg-arcade-green/15 text-arcade-green"
+                        : isMet
+                          ? "flex h-11 w-11 items-center justify-center rounded-xl border border-arcade-gold/40 bg-arcade-gold/15 text-arcade-gold"
+                          : "flex h-11 w-11 items-center justify-center rounded-xl border border-arcade-border bg-arcade-raised text-arcade-muted"
+                    }
+                  >
+                    {achievement.claimed ? (
+                      <Check className="h-5 w-5" />
+                    ) : isMet ? (
+                      <Trophy className="h-5 w-5" />
+                    ) : (
+                      <Lock className="h-5 w-5" />
+                    )}
+                  </span>
                   <div>
-                    <h3 className="font-bold text-[#4a3728]">{achievement.name}</h3>
-                    <p className="text-sm text-[#6b5344]">{achievement.description}</p>
+                    <h3 className="font-semibold text-arcade-text">{achievement.name}</h3>
+                    <p className="text-sm text-arcade-muted">{achievement.description}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {!achievement.claimed ? (
-                     <Button 
-                        disabled={!isMet} 
-                        onClick={() => handleClaimAchievement(achievement.id, achievement.reward)}
-                        className="bg-green-500 hover:bg-green-600 border-2 border-green-700 text-white font-bold h-8 text-xs disabled:opacity-30 disabled:pointer-events-none"
-                     >
-                       {isMet ? `Claim +${achievement.reward}` : "Locked"}
-                     </Button>
-                  ) : (
-                    <span className="font-bold text-[#4a3728] opacity-50">Claimed</span>
-                  )}
-                </div>
+
+                {achievement.claimed ? (
+                  <span className="rounded-full border border-arcade-green/30 bg-arcade-green/10 px-3 py-1 text-xs font-semibold text-arcade-green">
+                    Claimed
+                  </span>
+                ) : (
+                  <Button
+                    type="button"
+                    disabled={!isMet}
+                    onClick={() => handleClaimAchievement(achievement.id, achievement.reward)}
+                    className="arcade-cta h-9 rounded-lg px-4 text-xs font-bold"
+                  >
+                    {isMet ? `Claim +${achievement.reward}` : "Locked"}
+                  </Button>
+                )}
               </div>
             )
           })}
-        </div>
+        </ArcadeCard>
       </div>
     </div>
   )

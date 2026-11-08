@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import WalletsTab from "@/components/tabs/wallets-tab"
 
@@ -58,6 +59,10 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
   const [wallets, setWallets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchEmail, setSearchEmail] = useState("")
+  const [userPage, setUserPage] = useState(1)
+  const USERS_PER_PAGE = 15
+  const [withdrawalFilter, setWithdrawalFilter] = useState<"all" | "pending" | "approved" | "completed" | "rejected">("all")
+  const [depositFilter, setDepositFilter] = useState<"all" | "pending_verification" | "verified" | "rejected">("all")
 
   // Economy stats
   const [economyStats, setEconomyStats] = useState({
@@ -127,13 +132,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Withdrawal approved! Now you must send payment manually to the user.')
+        toast.success('✅ Withdrawal approved! Now you must send payment manually to the user.')
         fetchData()
       } else {
-        alert('Failed to approve withdrawal')
+        toast.error('Failed to approve withdrawal')
       }
     } catch (error) {
-      alert('Error approving withdrawal')
+      toast.error('Error approving withdrawal')
     }
   }
 
@@ -155,13 +160,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Withdrawal marked as PAID!')
+        toast.success('✅ Withdrawal marked as PAID!')
         fetchData()
       } else {
-        alert('Failed to mark withdrawal as paid')
+        toast.error('Failed to mark withdrawal as paid')
       }
     } catch (error) {
-      alert('Error marking withdrawal as paid')
+      toast.error('Error marking withdrawal as paid')
     }
   }
 
@@ -180,13 +185,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('Withdrawal rejected and balance refunded to user')
+        toast.success('Withdrawal rejected and balance refunded to user')
         fetchData()
       } else {
-        alert('Failed to reject withdrawal')
+        toast.error('Failed to reject withdrawal')
       }
     } catch (error) {
-      alert('Error rejecting withdrawal')
+      toast.error('Error rejecting withdrawal')
     }
   }
 
@@ -208,13 +213,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Deposit verified! Payment confirmed.')
+        toast.success('✅ Deposit verified! Payment confirmed.')
         fetchData()
       } else {
-        alert('Failed to verify deposit')
+        toast.error('Failed to verify deposit')
       }
     } catch (error) {
-      alert('Error verifying deposit')
+      toast.error('Error verifying deposit')
     }
   }
 
@@ -236,13 +241,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('❌ Deposit rejected. Coins have been revoked from user balance.')
+        toast.success('❌ Deposit rejected. Coins have been revoked from user balance.')
         fetchData()
       } else {
-        alert('Failed to reject deposit')
+        toast.error('Failed to reject deposit')
       }
     } catch (error) {
-      alert('Error rejecting deposit')
+      toast.error('Error rejecting deposit')
     }
   }
 
@@ -261,13 +266,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Wallet saved successfully!')
+        toast.success('✅ Wallet saved successfully!')
         fetchData()
       } else {
-        alert('Failed to save wallet')
+        toast.error('Failed to save wallet')
       }
     } catch (error) {
-      alert('Error saving wallet')
+      toast.error('Error saving wallet')
     }
   }
 
@@ -286,36 +291,46 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert(`User role changed to ${newRole}`)
+        toast.success(`User role changed to ${newRole}`)
         fetchData()
       } else {
-        alert('Failed to change user role')
+        toast.error('Failed to change user role')
       }
     } catch (error) {
-      alert('Error changing user role')
+      toast.error('Error changing user role')
     }
   }
 
   const filteredUsers = users.filter(u => 
     u.email.toLowerCase().includes(searchEmail.toLowerCase())
   )
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE))
+  const safePage = Math.min(userPage, totalPages)
+  const paginatedUsers = filteredUsers.slice((safePage - 1) * USERS_PER_PAGE, safePage * USERS_PER_PAGE)
+
+  const filteredWithdrawals = withdrawals.filter(w =>
+    withdrawalFilter === "all" ? true : w.status === withdrawalFilter
+  )
+  const filteredDeposits = deposits.filter(d =>
+    depositFilter === "all" ? true : d.status === depositFilter
+  )
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center"
-        style={{ background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)" }}>
+        className="arcade-bg">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#d4a534] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-2xl font-bold text-[#4a3728]">Loading Admin Panel...</p>
+          <div className="w-16 h-16 border-4 border-arcade-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-2xl font-bold text-arcade-text">Loading Admin Panel...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)" }}>
+    <div className="min-h-screen" className="arcade-bg">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 md:px-8 bg-[#4a3728] text-white">
+      <header className="flex items-center justify-between px-4 py-3 md:px-8 bg-arcade-surface text-white">
         <div>
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
           <p className="text-sm opacity-70">Logged in as: {email}</p>
@@ -328,13 +343,19 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
               onClick={() => setActiveTab(tab as any)}
               className={`px-4 py-2 rounded-lg font-bold uppercase ${
                 activeTab === tab
-                  ? "bg-[#d4a534] text-[#4a3728]"
+                  ? "bg-[#d4a534] text-arcade-text"
                   : "bg-white/10 hover:bg-white/20"
               }`}
             >
               {tab}
             </Button>
           ))}
+          <Button
+            onClick={fetchData}
+            className="bg-white/10 hover:bg-white/20 text-arcade-text"
+          >
+            Refresh
+          </Button>
           <Button
             onClick={onLogout}
             className="bg-red-500 hover:bg-red-600 text-white"
@@ -356,9 +377,9 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
 
         {/* Users Tab */}
         {activeTab === "users" && (
-          <div className="bg-white/80 rounded-lg p-6 shadow-lg">
+          <div className="arcade-card p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#4a3728]">User Management</h2>
+              <h2 className="text-xl font-bold text-arcade-text">User Management</h2>
               <Input
                 type="text"
                 placeholder="Search by email..."
@@ -371,17 +392,17 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-2 border-[#c4a574]">
-                    <th className="text-left p-2 text-[#4a3728]">Email</th>
-                    <th className="text-left p-2 text-[#4a3728]">Balance</th>
-                    <th className="text-left p-2 text-[#4a3728]">Role</th>
-                    <th className="text-left p-2 text-[#4a3728]">Status</th>
-                    <th className="text-left p-2 text-[#4a3728]">Actions</th>
+                  <tr className="border-b-2 border-arcade-border">
+                    <th className="text-left p-2 text-arcade-text">Email</th>
+                    <th className="text-left p-2 text-arcade-text">Balance</th>
+                    <th className="text-left p-2 text-arcade-text">Role</th>
+                    <th className="text-left p-2 text-arcade-text">Status</th>
+                    <th className="text-left p-2 text-arcade-text">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user, idx) => (
-                    <tr key={idx} className="border-b border-[#e8d5b0] hover:bg-[#f5e6c8]/30">
+                  {paginatedUsers.map((user, idx) => (
+                    <tr key={idx} className="border-b border-arcade-border hover:bg-arcade-raised/30">
                       <td className="p-2">{user.email}</td>
                       <td className="p-2 font-bold">{user.balance?.toLocaleString() || 0}</td>
                       <td className="p-2">
@@ -413,12 +434,36 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                 </tbody>
               </table>
             </div>
+
+            {filteredUsers.length > USERS_PER_PAGE && (
+              <div className="mt-4 flex items-center justify-between text-sm text-arcade-muted">
+                <span>
+                  Page {safePage} of {totalPages} · {filteredUsers.length} users
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className="arcade-cta h-8 px-3 text-xs"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    onClick={() => setUserPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    className="arcade-cta h-8 px-3 text-xs"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* Withdrawals Tab */}
         {activeTab === "withdrawals" && (
-          <div className="bg-white/80 rounded-lg p-6 shadow-lg">
+          <div className="arcade-card p-6">
             <div className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-400 rounded-lg">
               <h3 className="font-bold text-yellow-800 mb-2">⚠️ Flujo de Pagos Manuales</h3>
               <ol className="list-decimal list-inside space-y-1 text-sm text-yellow-900">
@@ -429,25 +474,42 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
               <p className="mt-2 text-xs text-yellow-700">💡 <strong>Importante:</strong> Todos los pagos deben ser verificados y enviados por ti personalmente</p>
             </div>
 
-            <h2 className="text-xl font-bold text-[#4a3728] mb-4">Withdrawal Requests</h2>
+            <h2 className="text-xl font-bold text-arcade-text mb-4">Withdrawal Requests</h2>
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {["all", "pending", "approved", "completed", "rejected"].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setWithdrawalFilter(f as any)}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors ${
+                    withdrawalFilter === f
+                      ? "border-arcade-gold bg-arcade-gold/15 text-arcade-gold"
+                      : "border-arcade-border bg-arcade-raised text-arcade-muted hover:text-arcade-text"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-2 border-[#c4a574]">
-                    <th className="text-left p-2 text-[#4a3728]">User</th>
-                    <th className="text-left p-2 text-[#4a3728]">Amount</th>
-                    <th className="text-left p-2 text-[#4a3728]">Method</th>
-                    <th className="text-left p-2 text-[#4a3728]">Address</th>
-                    <th className="text-left p-2 text-[#4a3728]">Date</th>
-                    <th className="text-left p-2 text-[#4a3728]">Status</th>
-                    <th className="text-left p-2 text-[#4a3728]">Payment</th>
-                    <th className="text-left p-2 text-[#4a3728]">Actions</th>
+                  <tr className="border-b-2 border-arcade-border">
+                    <th className="text-left p-2 text-arcade-text">User</th>
+                    <th className="text-left p-2 text-arcade-text">Amount</th>
+                    <th className="text-left p-2 text-arcade-text">Method</th>
+                    <th className="text-left p-2 text-arcade-text">Address</th>
+                    <th className="text-left p-2 text-arcade-text">Date</th>
+                    <th className="text-left p-2 text-arcade-text">Status</th>
+                    <th className="text-left p-2 text-arcade-text">Payment</th>
+                    <th className="text-left p-2 text-arcade-text">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {withdrawals.map((withdrawal) => (
-                    <tr key={withdrawal.id} className="border-b border-[#e8d5b0] hover:bg-[#f5e6c8]/30">
+                  {filteredWithdrawals.map((withdrawal) => (
+                    <tr key={withdrawal.id} className="border-b border-arcade-border hover:bg-arcade-raised/30">
                       <td className="p-2 text-sm">{withdrawal.email}</td>
                       <td className="p-2 font-bold">{withdrawal.amount.toLocaleString()}</td>
                       <td className="p-2">{withdrawal.method}</td>
@@ -513,7 +575,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                   ))}
                   {withdrawals.length === 0 && (
                     <tr>
-                      <td colSpan={8} className="p-8 text-center text-[#6b5344]">
+                      <td colSpan={8} className="p-8 text-center text-arcade-muted">
                         No withdrawal requests yet
                       </td>
                     </tr>
@@ -526,7 +588,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
 
         {/* Deposits Tab */}
         {activeTab === "deposits" && (
-          <div className="bg-white/80 rounded-lg p-6 shadow-lg">
+          <div className="arcade-card p-6">
             <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-400 rounded-lg">
               <h3 className="font-bold text-blue-800 mb-2">💰 Flujo de Depósitos con Acreditación Inmediata</h3>
               <ol className="list-decimal list-inside space-y-1 text-sm text-blue-900">
@@ -542,30 +604,47 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
               <p className="mt-2 text-xs text-blue-700">💡 <strong>Ventaja:</strong> El usuario ve su balance al instante (no se asusta), pero tú puedes revertir si es fraude</p>
             </div>
 
-            <h2 className="text-xl font-bold text-[#4a3728] mb-4">Deposit Requests</h2>
+            <h2 className="text-xl font-bold text-arcade-text mb-4">Deposit Requests</h2>
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {["all", "pending_verification", "verified", "rejected"].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setDepositFilter(f as any)}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors ${
+                    depositFilter === f
+                      ? "border-arcade-gold bg-arcade-gold/15 text-arcade-gold"
+                      : "border-arcade-border bg-arcade-raised text-arcade-muted hover:text-arcade-text"
+                  }`}
+                >
+                  {f.replace("_", " ")}
+                </button>
+              ))}
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b-2 border-[#c4a574]">
-                    <th className="text-left p-2 text-[#4a3728]">User</th>
-                    <th className="text-left p-2 text-[#4a3728]">USD</th>
-                    <th className="text-left p-2 text-[#4a3728]">Coins</th>
-                    <th className="text-left p-2 text-[#4a3728]">Method/TxHash</th>
-                    <th className="text-left p-2 text-[#4a3728]">Date</th>
-                    <th className="text-left p-2 text-[#4a3728]">Status</th>
-                    <th className="text-left p-2 text-[#4a3728]">Actions</th>
+                  <tr className="border-b-2 border-arcade-border">
+                    <th className="text-left p-2 text-arcade-text">User</th>
+                    <th className="text-left p-2 text-arcade-text">USD</th>
+                    <th className="text-left p-2 text-arcade-text">Coins</th>
+                    <th className="text-left p-2 text-arcade-text">Method/TxHash</th>
+                    <th className="text-left p-2 text-arcade-text">Date</th>
+                    <th className="text-left p-2 text-arcade-text">Status</th>
+                    <th className="text-left p-2 text-arcade-text">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {deposits.map((deposit) => (
-                    <tr key={deposit.id} className="border-b border-[#e8d5b0] hover:bg-[#f5e6c8]/30">
+                  {filteredDeposits.map((deposit) => (
+                    <tr key={deposit.id} className="border-b border-arcade-border hover:bg-arcade-raised/30">
                       <td className="p-2 text-sm">{deposit.email}</td>
                       <td className="p-2 font-bold">${deposit.amountUSD}</td>
                       <td className="p-2 text-green-600 font-bold">+{deposit.coinsReceived.toLocaleString()}</td>
                       <td className="p-2">
                         <div>{deposit.method}</div>
-                        <div className="text-[10px] font-mono text-gray-500 break-all">{deposit.txHash || '-'}</div>
+                        <div className="text-[10px] font-mono text-arcade-muted break-all">{deposit.txHash || '-'}</div>
                       </td>
                       <td className="p-2 text-sm">{deposit.date}</td>
                       <td className="p-2">
@@ -601,7 +680,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                         {deposit.status === 'rejected' && (
                           <div className="text-xs text-red-600">
                             <div>❌ Rejected</div>
-                            <div className="text-[10px] text-gray-500">Balance revoked</div>
+                            <div className="text-[10px] text-arcade-muted">Balance revoked</div>
                           </div>
                         )}
                       </td>
@@ -609,7 +688,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                   ))}
                   {deposits.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-[#6b5344]">
+                      <td colSpan={7} className="p-8 text-center text-arcade-muted">
                         No deposit requests yet
                       </td>
                     </tr>
@@ -647,14 +726,14 @@ function StatCard({ label, value, icon, color = "green" }: {
   }
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-lg">
+    <div className="arcade-card p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-2xl">{icon}</span>
         <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${colorClasses[color]} flex items-center justify-center`}>
           <span className="text-white text-sm font-bold">{typeof value === 'number' ? value : 0}</span>
         </div>
       </div>
-      <p className="text-sm text-[#6b5344]">{label}</p>
+      <p className="text-sm text-arcade-muted">{label}</p>
     </div>
   )
 }
@@ -716,12 +795,12 @@ function EconomyTab({ token }: { token: string }) {
       })
 
       if (res.ok) {
-        alert('Economy configuration saved successfully!')
+        toast.success('Economy configuration saved successfully!')
       } else {
-        alert('Failed to save economy configuration')
+        toast.error('Failed to save economy configuration')
       }
     } catch (error) {
-      alert('Error saving economy configuration')
+      toast.error('Error saving economy configuration')
     } finally {
       setSaving(false)
     }
@@ -732,9 +811,9 @@ function EconomyTab({ token }: { token: string }) {
   }
 
   return (
-    <div className="bg-white/80 rounded-lg p-6 shadow-lg">
+    <div className="arcade-card p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-[#4a3728]">Economy Configuration</h2>
+        <h2 className="text-xl font-bold text-arcade-text">Economy Configuration</h2>
         <Button
           onClick={handleSave}
           disabled={saving}
@@ -746,11 +825,11 @@ function EconomyTab({ token }: { token: string }) {
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Conversion Rates */}
-        <div className="p-4 bg-[#f5e6c8] rounded-lg">
-          <h3 className="font-bold text-[#4a3728] mb-4">Conversion Rates</h3>
+        <div className="p-4 bg-arcade-raised rounded-lg">
+          <h3 className="font-bold text-arcade-text mb-4">Conversion Rates</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-[#6b5344]">Coins to USD (2000 coins = $1)</label>
+              <label className="text-sm text-arcade-muted">Coins to USD (2000 coins = $1)</label>
               <Input
                 type="number"
                 value={config.coinsToUSD}
@@ -759,7 +838,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">USD to Coins ($1 = 1000 coins)</label>
+              <label className="text-sm text-arcade-muted">USD to Coins ($1 = 1000 coins)</label>
               <Input
                 type="number"
                 value={config.usdToCoins}
@@ -771,21 +850,21 @@ function EconomyTab({ token }: { token: string }) {
         </div>
 
         {/* Withdrawal Limits */}
-        <div className="p-4 bg-[#f5e6c8] rounded-lg">
-          <h3 className="font-bold text-[#4a3728] mb-4">Withdrawal Limits</h3>
+        <div className="p-4 bg-arcade-raised rounded-lg">
+          <h3 className="font-bold text-arcade-text mb-4">Withdrawal Limits</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-[#6b5344]">Minimum Withdrawal (coins)</label>
+              <label className="text-sm text-arcade-muted">Minimum Withdrawal (coins)</label>
               <Input
                 type="number"
                 value={config.minWithdrawal}
                 onChange={(e) => setConfig({ ...config, minWithdrawal: parseInt(e.target.value) })}
                 className="mt-1"
               />
-              <p className="text-xs text-gray-600 mt-1">Minimum coins required to withdraw</p>
+              <p className="text-xs text-arcade-muted mt-1">Minimum coins required to withdraw</p>
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Max Per Day</label>
+              <label className="text-sm text-arcade-muted">Max Per Day</label>
               <Input
                 type="number"
                 value={config.maxWithdrawalPerDay}
@@ -794,7 +873,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Max Per Week</label>
+              <label className="text-sm text-arcade-muted">Max Per Week</label>
               <Input
                 type="number"
                 value={config.maxWithdrawalPerWeek}
@@ -806,11 +885,11 @@ function EconomyTab({ token }: { token: string }) {
         </div>
 
         {/* Miner Settings */}
-        <div className="p-4 bg-[#f5e6c8] rounded-lg">
-          <h3 className="font-bold text-[#4a3728] mb-4">Miner Settings</h3>
+        <div className="p-4 bg-arcade-raised rounded-lg">
+          <h3 className="font-bold text-arcade-text mb-4">Miner Settings</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-[#6b5344]">Min Miner Level Global (1-12)</label>
+              <label className="text-sm text-arcade-muted">Min Miner Level Global (1-12)</label>
               <Input
                 type="number"
                 min="1"
@@ -819,10 +898,10 @@ function EconomyTab({ token }: { token: string }) {
                 onChange={(e) => setConfig({ ...config, minMinerGlobal: parseInt(e.target.value) })}
                 className="mt-1"
               />
-              <p className="text-xs text-gray-600 mt-1">Minimum miner level required to start earning</p>
+              <p className="text-xs text-arcade-muted mt-1">Minimum miner level required to start earning</p>
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Earning Multiplier (1.0 = base rate)</label>
+              <label className="text-sm text-arcade-muted">Earning Multiplier (1.0 = base rate)</label>
               <Input
                 type="number"
                 step="0.1"
@@ -832,7 +911,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Max Miners Per Type</label>
+              <label className="text-sm text-arcade-muted">Max Miners Per Type</label>
               <Input
                 type="number"
                 value={config.maxMinersPerType}
@@ -841,7 +920,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Offline Earning Cap (seconds)</label>
+              <label className="text-sm text-arcade-muted">Offline Earning Cap (seconds)</label>
               <Input
                 type="number"
                 value={config.offlineEarningCap}
@@ -853,11 +932,11 @@ function EconomyTab({ token }: { token: string }) {
         </div>
 
         {/* Bonus Settings */}
-        <div className="p-4 bg-[#f5e6c8] rounded-lg">
-          <h3 className="font-bold text-[#4a3728] mb-4">Bonus Amounts</h3>
+        <div className="p-4 bg-arcade-raised rounded-lg">
+          <h3 className="font-bold text-arcade-text mb-4">Bonus Amounts</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-[#6b5344]">Daily Bonus</label>
+              <label className="text-sm text-arcade-muted">Daily Bonus</label>
               <Input
                 type="number"
                 value={config.dailyBonusAmount}
@@ -866,7 +945,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Watch Ad</label>
+              <label className="text-sm text-arcade-muted">Watch Ad</label>
               <Input
                 type="number"
                 value={config.watchAdAmount}
@@ -875,7 +954,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Social Share</label>
+              <label className="text-sm text-arcade-muted">Social Share</label>
               <Input
                 type="number"
                 value={config.socialShareAmount}
@@ -884,7 +963,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Lucky Wheel</label>
+              <label className="text-sm text-arcade-muted">Lucky Wheel</label>
               <Input
                 type="number"
                 value={config.luckyWheelAmount}
@@ -896,11 +975,11 @@ function EconomyTab({ token }: { token: string }) {
         </div>
 
         {/* Fees */}
-        <div className="p-4 bg-[#f5e6c8] rounded-lg">
-          <h3 className="font-bold text-[#4a3728] mb-4">Fees & Anti-Fraud</h3>
+        <div className="p-4 bg-arcade-raised rounded-lg">
+          <h3 className="font-bold text-arcade-text mb-4">Fees & Anti-Fraud</h3>
           <div className="space-y-3">
             <div>
-              <label className="text-sm text-[#6b5344]">Withdrawal Fee (0.05 = 5%)</label>
+              <label className="text-sm text-arcade-muted">Withdrawal Fee (0.05 = 5%)</label>
               <Input
                 type="number"
                 step="0.01"
@@ -910,7 +989,7 @@ function EconomyTab({ token }: { token: string }) {
               />
             </div>
             <div>
-              <label className="text-sm text-[#6b5344]">Suspicious Balance Threshold</label>
+              <label className="text-sm text-arcade-muted">Suspicious Balance Threshold</label>
               <Input
                 type="number"
                 value={config.suspiciousBalanceIncreaseThreshold}

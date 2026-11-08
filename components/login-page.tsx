@@ -1,13 +1,34 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
+import {
+  Eye,
+  EyeOff,
+  Gem,
+  Lock,
+  Mail,
+  Pickaxe,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Users,
+} from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import Image from "next/image"
+import { cn } from "@/lib/utils"
 
 interface LoginPageProps {
   onLogin: (email: string, token: string, role: string) => void
 }
+
+const STATS = [
+  { icon: Users, label: "Players", value: "87,613" },
+  { icon: Pickaxe, label: "New miners", value: "497" },
+  { icon: ShieldCheck, label: "Online", value: "934" },
+  { icon: Gem, label: "Project start", value: "28.03.2026" },
+]
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const [email, setEmail] = useState("")
@@ -16,6 +37,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [isRegistering, setIsRegistering] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  const switchMode = (registering: boolean) => {
+    setIsRegistering(registering)
+    setError("")
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,31 +67,30 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setIsLoading(true)
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
           password,
-          action: isRegistering ? 'register' : 'login'
-        })
+          action: isRegistering ? "register" : "login",
+        }),
       })
       const data = await res.json()
 
       if (data.success && data.token) {
-        // Store token
-        localStorage.setItem('melqo-token', data.token)
-        localStorage.setItem('melqo-role', data.user.role || 'user')
+        localStorage.setItem("melqo-token", data.token)
+        localStorage.setItem("melqo-role", data.user.role || "user")
 
         if (data.user.balance) {
-          localStorage.setItem('melqo-balance', JSON.stringify(data.user.balance))
+          localStorage.setItem("melqo-balance", JSON.stringify(data.user.balance))
         }
 
-        onLogin(email, data.token, data.user.role || 'user')
+        onLogin(email, data.token, data.user.role || "user")
       } else {
         setError(data.error || "Login failed")
       }
-    } catch (error) {
+    } catch {
       setError("Network error. Please try again.")
     } finally {
       setIsLoading(false)
@@ -71,245 +98,274 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   }
 
   return (
-    <div
-      className="min-h-screen w-full bg-cover bg-center bg-no-repeat relative overflow-hidden"
-      style={{
-        backgroundImage: "url('/images/bg-landscape.jpg')"
-      }}
-    >
-      {/* Overlay for better readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-sky-400/20 to-sky-600/30" />
+    <div className="arcade-bg arcade-grid min-h-screen">
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-7xl items-center gap-6 px-4 py-6 md:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:py-10">
+        {/* Hero */}
+        <section className="relative order-2 hidden overflow-hidden rounded-3xl border border-arcade-border bg-arcade-surface lg:order-1 lg:flex lg:min-h-[640px] lg:flex-col lg:justify-between lg:p-8">
+          <Image
+            src="/images/bg-landscape.jpg"
+            alt=""
+            fill
+            priority
+            sizes="50vw"
+            className="object-cover opacity-50"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-[#070b14]/70 to-[#070b14]/20" />
 
-      <div className="relative z-10 min-h-screen flex flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between px-4 py-4 md:px-8">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <h1
-              className="text-4xl md:text-5xl font-bold tracking-wider"
-              style={{
-                color: "#d4a534",
-                textShadow: "2px 2px 0 #8B4513, 4px 4px 0 #654321, 0 0 20px rgba(212, 165, 52, 0.5)"
-              }}
-            >
-              Melqo
-            </h1>
+          <div className="relative z-10 flex items-center gap-2.5">
+            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-arcade-gold/30 bg-arcade-raised">
+              <Image
+                src="/images/mine-icon.png"
+                alt=""
+                width={38}
+                height={38}
+                className="h-9 w-9 object-contain"
+              />
+            </span>
+            <span className="font-display text-2xl tracking-[0.18em] text-arcade-text">
+              MEL<span className="text-arcade-gold text-glow-gold">QO</span>
+            </span>
           </div>
 
-          {/* Create Account Button */}
-          <Button
-            onClick={() => setIsRegistering(true)}
-            className="bg-gradient-to-b from-[#f5d742] to-[#d4a534] hover:from-[#f5d742] hover:to-[#c49a2f] text-[#4a3728] font-bold px-6 py-2 rounded-full shadow-lg border-2 border-[#a67c00]"
-          >
-            Create an account
-          </Button>
-        </header>
+          <div className="relative z-10 max-w-lg">
+            <span className="inline-flex items-center gap-2 rounded-full border border-arcade-gold/30 bg-black/40 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-arcade-gold backdrop-blur">
+              <Sparkles className="h-3.5 w-3.5" />
+              Play-to-earn mining
+            </span>
+            <h1 className="mt-4 font-display text-4xl leading-[1.1] text-arcade-text xl:text-5xl">
+              Mine coins.
+              <br />
+              Build an <span className="text-arcade-gold text-glow-gold">empire.</span>
+            </h1>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-arcade-muted sm:text-base">
+              Hire miners, upgrade your mines and turn idle time into real crypto.
+              Your crew keeps digging even while you are away.
+            </p>
 
-        {/* Stats Cards */}
-        <div className="flex flex-wrap justify-center gap-3 px-4 mt-2 md:mt-4">
-          <StatCard icon="pickaxe" label="PLAYERS" value="87 613" />
-          <StatCard icon="mouse" label="NEW PLAYERS" value="497" />
-          <StatCard icon="helmet" label="ONLINE" value="934" />
-          <StatCard icon="hourglass" label="PROJECT START" value="28.03.2026" />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex items-start justify-start px-4 md:px-8 mt-8 md:mt-12">
-          {/* Login Form */}
-          <div
-            className="w-full max-w-md p-6 md:p-8 rounded-lg shadow-2xl relative"
-            style={{
-              background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 50%, #d9c4a0 100%)",
-              border: "3px solid #c4a574",
-              boxShadow: "inset 0 2px 10px rgba(255,255,255,0.3), 0 10px 30px rgba(0,0,0,0.3)"
-            }}
-          >
-            {/* Paper texture overlay */}
-            <div
-              className="absolute inset-0 rounded-lg opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E\")"
-              }}
-            />
-
-            <div className="relative z-10">
-              <h2 className="text-2xl font-bold text-center text-[#4a3728] mb-6 tracking-wide">
-                {isRegistering ? "REGISTRATION" : "AUTHORIZATION"}
-              </h2>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
-                  <div className="bg-red-500/10 border-2 border-red-500 text-red-700 px-4 py-2 rounded-lg text-sm">
-                    {error}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-3 bg-white/60 rounded-lg px-4 py-3 border border-[#c4a574]">
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#d4a534]" fill="currentColor">
-                      <circle cx="12" cy="8" r="4" />
-                      <path d="M12 14c-6 0-8 3-8 6v2h16v-2c0-3-2-6-8-6z" />
-                    </svg>
-                  </div>
-                  <Input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="border-0 bg-transparent focus-visible:ring-0 text-[#4a3728] placeholder:text-[#6b5344]/70"
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 bg-white/60 rounded-lg px-4 py-3 border border-[#c4a574]">
-                  <div className="w-8 h-8 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#d4a534]" fill="currentColor">
-                      <rect x="5" y="11" width="14" height="10" rx="2" />
-                      <path d="M12 3a4 4 0 0 0-4 4v4h8V7a4 4 0 0 0-4-4z" fill="none" stroke="currentColor" strokeWidth="2" />
-                    </svg>
-                  </div>
-                  <Input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="border-0 bg-transparent focus-visible:ring-0 text-[#4a3728] placeholder:text-[#6b5344]/70"
-                  />
-                </div>
-
-                {isRegistering && (
-                  <div className="flex items-center gap-3 bg-white/60 rounded-lg px-4 py-3 border border-[#c4a574]">
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#d4a534]" fill="currentColor">
-                        <rect x="5" y="11" width="14" height="10" rx="2" />
-                        <path d="M12 3a4 4 0 0 0-4 4v4h8V7a4 4 0 0 0-4-4z" fill="none" stroke="currentColor" strokeWidth="2" />
-                      </svg>
-                    </div>
-                    <Input
-                      type="password"
-                      placeholder="Confirm password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="border-0 bg-transparent focus-visible:ring-0 text-[#4a3728] placeholder:text-[#6b5344]/70"
-                    />
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-2">
-                  {!isRegistering && (
-                    <button
-                      type="button"
-                      className="text-sm text-[#6b5344] hover:text-[#4a3728] underline"
-                    >
-                      Forgot your password?
-                    </button>
-                  )}
-                  {isRegistering && (
-                    <button
-                      type="button"
-                      onClick={() => setIsRegistering(false)}
-                      className="text-sm text-[#6b5344] hover:text-[#4a3728] underline"
-                    >
-                      Already have an account?
-                    </button>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-gradient-to-b from-[#f5d742] to-[#d4a534] hover:from-[#f5d742] hover:to-[#c49a2f] text-[#4a3728] font-bold px-8 py-2 rounded-full shadow-lg border-2 border-[#a67c00] disabled:opacity-50"
+            <div className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {STATS.map((stat) => {
+                const Icon = stat.icon
+                return (
+                  <div
+                    key={stat.label}
+                    className="rounded-xl border border-white/10 bg-black/35 px-3 py-2 backdrop-blur"
                   >
-                    {isLoading ? "Processing..." : isRegistering ? "Register" : "Log in"}
-                  </Button>
-                </div>
-              </form>
+                    <Icon className="mb-1 h-3.5 w-3.5 text-arcade-gold" />
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-arcade-muted">
+                      {stat.label}
+                    </p>
+                    <p className="font-display text-sm text-arcade-text">{stat.value}</p>
+                  </div>
+                )
+              })}
             </div>
           </div>
-        </div>
 
-        {/* Miner Character */}
-        <div className="absolute bottom-0 right-0 w-[300px] h-[400px] md:w-[500px] md:h-[600px] pointer-events-none">
+          <div className="relative z-10 flex items-center gap-2 text-xs text-arcade-muted">
+            <TrendingUp className="h-4 w-4 text-arcade-green" />
+            Passive income that keeps running 24/7.
+          </div>
+
           <Image
             src="/images/miner-character.png"
-            alt="Miner Character"
-            fill
-            className="object-contain object-bottom"
-            priority
+            alt=""
+            width={360}
+            height={460}
+            className="pointer-events-none absolute -bottom-2 right-0 h-[380px] w-auto object-contain opacity-95 xl:h-[440px]"
           />
-        </div>
+        </section>
 
-        {/* Footer */}
-        <footer className="mt-auto py-6 px-4 md:px-8 flex flex-col md:flex-row items-center justify-between z-20 relative">
-          <div className="text-[#4a3728] font-bold text-sm mb-4 md:mb-0 drop-shadow-md">
-            © {new Date().getFullYear()} Melqo Mining Game. All rights reserved.
+        {/* Form */}
+        <section className="order-1 flex w-full flex-col items-center lg:order-2">
+          <div className="mb-5 flex items-center gap-2.5 lg:hidden">
+            <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-arcade-gold/30 bg-arcade-raised">
+              <Image
+                src="/images/mine-icon.png"
+                alt=""
+                width={38}
+                height={38}
+                className="h-9 w-9 object-contain"
+              />
+            </span>
+            <span className="font-display text-2xl tracking-[0.18em] text-arcade-text">
+              MEL<span className="text-arcade-gold">QO</span>
+            </span>
           </div>
 
-          <div className="flex items-center gap-6">
-            <a href="https://t.me/MelqoSupport" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[#4a3728] hover:text-[#d4a534] font-bold transition-colors">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current border border-[#4a3728] rounded-full p-0.5">
-                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.32-.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.888-.662 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-              </svg>
-              Telegram Support
-            </a>
-            <a href="#" className="text-sm text-[#4a3728] hover:text-[#d4a534] underline underline-offset-2 font-bold">Terms of Service</a>
-            <a href="#" className="text-sm text-[#4a3728] hover:text-[#d4a534] underline underline-offset-2 font-bold">Privacy Policy</a>
+          <div className="w-full max-w-md">
+            <div className="mb-4 text-center lg:text-left">
+              <h2 className="font-display text-2xl text-arcade-text">
+                {isRegistering ? "Create your account" : "Welcome back, miner"}
+              </h2>
+              <p className="mt-1 text-sm text-arcade-muted">
+                {isRegistering
+                  ? "Start with a free crew and build your first mine."
+                  : "Log in to collect your earnings and grow your crew."}
+              </p>
+            </div>
+
+            <div className="arcade-card-raised p-5 sm:p-6">
+              <div className="mb-5 inline-flex w-full rounded-xl border border-arcade-border bg-black/30 p-1">
+                <button
+                  type="button"
+                  onClick={() => switchMode(false)}
+                  aria-pressed={!isRegistering}
+                  className={cn(
+                    "flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
+                    !isRegistering
+                      ? "bg-arcade-gold/15 text-arcade-gold"
+                      : "text-arcade-muted hover:text-arcade-text",
+                  )}
+                >
+                  Log in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMode(true)}
+                  aria-pressed={isRegistering}
+                  className={cn(
+                    "flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
+                    isRegistering
+                      ? "bg-arcade-gold/15 text-arcade-gold"
+                      : "text-arcade-muted hover:text-arcade-text",
+                  )}
+                >
+                  Create account
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+                {error ? (
+                  <div
+                    role="alert"
+                    className="rounded-xl border border-arcade-danger/40 bg-arcade-danger/10 px-3 py-2 text-sm text-arcade-danger"
+                  >
+                    {error}
+                  </div>
+                ) : null}
+
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-arcade-muted">
+                    <Mail className="h-3.5 w-3.5" />
+                    Email
+                  </span>
+                  <Input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className="h-11 border-arcade-border bg-black/30 text-arcade-text placeholder:text-arcade-muted/60"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-arcade-muted">
+                    <Lock className="h-3.5 w-3.5" />
+                    Password
+                  </span>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      autoComplete={isRegistering ? "new-password" : "current-password"}
+                      placeholder="At least 6 characters"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="h-11 border-arcade-border bg-black/30 pr-11 text-arcade-text placeholder:text-arcade-muted/60"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-lg text-arcade-muted transition-colors hover:text-arcade-text"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </label>
+
+                {isRegistering ? (
+                  <label className="block">
+                    <span className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-arcade-muted">
+                      <Lock className="h-3.5 w-3.5" />
+                      Confirm password
+                    </span>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        placeholder="Repeat your password"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
+                        className="h-11 border-arcade-border bg-black/30 pr-11 text-arcade-text placeholder:text-arcade-muted/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((value) => !value)}
+                        className="absolute right-1 top-1 flex h-9 w-9 items-center justify-center rounded-lg text-arcade-muted transition-colors hover:text-arcade-text"
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </label>
+                ) : null}
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="arcade-cta h-12 w-full rounded-xl font-display text-sm uppercase tracking-[0.16em]"
+                >
+                  {isLoading
+                    ? "Processing…"
+                    : isRegistering
+                      ? "Create account"
+                      : "Enter the mine"}
+                </Button>
+              </form>
+
+              {!isRegistering ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    toast.info("Password reset is not available yet", {
+                      description: "Contact support on Telegram and we will help you recover access.",
+                    })
+                  }
+                  className="mt-3 w-full text-center text-xs text-arcade-muted underline underline-offset-4 transition-colors hover:text-arcade-text"
+                >
+                  Forgot your password?
+                </button>
+              ) : null}
+            </div>
+
+            <div className="mt-5 flex items-center justify-center gap-4 text-xs text-arcade-muted">
+              <a
+                href="https://t.me/MelqoSupport"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition-colors hover:text-arcade-gold"
+              >
+                Telegram support
+              </a>
+              <span className="h-3 w-px bg-arcade-border" />
+              <a href="#" className="transition-colors hover:text-arcade-gold">
+                Terms
+              </a>
+              <span className="h-3 w-px bg-arcade-border" />
+              <a href="#" className="transition-colors hover:text-arcade-gold">
+                Privacy
+              </a>
+            </div>
+            <p className="mt-3 text-center text-[11px] text-arcade-muted/70">
+              © {new Date().getFullYear()} Melqo Mining Game. All rights reserved.
+            </p>
           </div>
-        </footer>
-      </div>
-    </div>
-  )
-}
-
-interface StatCardProps {
-  icon: "pickaxe" | "mouse" | "helmet" | "hourglass"
-  label: string
-  value: string
-}
-
-function StatCard({ icon, label, value }: StatCardProps) {
-  const getIcon = () => {
-    switch (icon) {
-      case "pickaxe":
-        return (
-          <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#8B4513">
-            <path d="M14.79,10.62L3.5,21.9L2.1,20.5L13.38,9.21C12.21,7.21 12.56,4.58 14.38,2.76L15.79,4.17C14.59,5.37 14.37,7.2 15.15,8.62L19.76,4L21.17,5.41L16.56,10C17.97,10.79 19.8,10.57 21,9.37L22.41,10.79C20.59,12.61 17.96,12.96 15.96,11.79Z" />
-          </svg>
-        )
-      case "mouse":
-        return (
-          <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#C06C84">
-            <path d="M11,1.07C7.05,1.56 4,4.92 4,9H11M4,15A8,8 0 0,0 12,23A8,8 0 0,0 20,15V11H4M13,1.07V9H20C20,4.92 16.94,1.56 13,1.07Z" />
-          </svg>
-        )
-      case "helmet":
-        return (
-          <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#d4a534">
-            <path d="M12,2C6.48,2 2,6.48 2,12C2,14.85 3.17,17.4 5.08,19.19L6.5,17.77C5.56,16.44 5,14.79 5,13C5,8.03 9.03,4 14,4C14.34,4 14.68,4.03 15,4.08V2.05C14,2 13,2 12,2M16,5V7.5L13.5,10L16,12.5V15C18.76,15 21,12.76 21,10C21,7.24 18.76,5 16,5Z" />
-            <circle cx="12" cy="8" r="6" fill="#d4a534" />
-            <ellipse cx="12" cy="12" rx="8" ry="5" fill="#d4a534" />
-          </svg>
-        )
-      case "hourglass":
-        return (
-          <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#d4a534">
-            <path d="M6,2V8H6V8L10,12L6,16V16H6V22H18V16H18V16L14,12L18,8V8H18V2H6M16,16.5V20H8V16.5L12,12.5L16,16.5M12,11.5L8,7.5V4H16V7.5L12,11.5Z" />
-          </svg>
-        )
-    }
-  }
-
-  return (
-    <div
-      className="flex items-center gap-3 px-4 py-2 rounded-lg min-w-[140px]"
-      style={{
-        background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
-        border: "2px solid #c4a574",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.2)"
-      }}
-    >
-      {getIcon()}
-      <div className="flex flex-col">
-        <span className="text-xs text-[#6b5344] font-medium">{label}</span>
-        <span className="text-lg font-bold text-[#4a3728]">{value}</span>
+        </section>
       </div>
     </div>
   )

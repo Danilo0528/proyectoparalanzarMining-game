@@ -14,3 +14,9 @@ next.user-config.*
 node_modules
 .next/
 .DS_Store
+
+# Python / generated agent artifacts
+__pycache__/
+*.pyc
+*.tsbuildinfo
+graphify-out/cache/

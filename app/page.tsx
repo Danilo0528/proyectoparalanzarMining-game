@@ -20,11 +20,12 @@ export default function Home() {
 
   if (!isMounted || !isLoginInitialized || !isBalanceInitialized) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center"
-        style={{ background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)" }}>
+      <div className="arcade-bg min-h-screen flex flex-col items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-[#d4a534] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-2xl font-bold text-[#4a3728]">Loading Melqo...</p>
+          <div className="w-16 h-16 border-4 border-arcade-gold border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="font-display text-2xl tracking-wide text-arcade-text">
+            Loading <span className="text-arcade-gold">Melqo</span>…
+          </p>
         </div>
       </div>
     )
