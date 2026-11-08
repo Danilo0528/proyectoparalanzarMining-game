@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import GameShell from "@/components/game/game-shell"
 import MinersTab from "@/components/tabs/miners-tab"
@@ -67,6 +67,14 @@ export default function GameDashboard({
   }, [isIslandsInitialized])
 
   // Keep the local game state mirrored to MongoDB for account recovery.
+  // State is read through refs so the interval doesn't restart every second
+  // (islands change every tick) and doesn't hammer the database.
+  const balanceRef = useRef(balance)
+  const islandsRef = useRef(islands)
+  const syncRef = useRef<(() => void) | null>(null)
+  balanceRef.current = balance
+  islandsRef.current = islands
+
   useEffect(() => {
     if (!email || !token) return
 
@@ -84,8 +92,8 @@ export default function GameDashboard({
           },
           body: JSON.stringify({
             state: {
-              balance,
-              islands,
+              balance: balanceRef.current,
+              islands: islandsRef.current,
               claims,
               achievements,
               transactions,
@@ -98,11 +106,13 @@ export default function GameDashboard({
       }
     }
 
-    const syncInterval = setInterval(syncToMongo, 60000)
+    // Sync immediately on mount, then every 2 minutes.
+    syncRef.current = syncToMongo
     syncToMongo()
+    const syncInterval = setInterval(syncToMongo, 120000)
 
     return () => clearInterval(syncInterval)
-  }, [email, token, balance, islands])
+  }, [email, token])
 
   const handleBuyMiner = (islandId: number, minerId: string) => {
     const island = findIsland(islands, islandId)
@@ -120,6 +130,7 @@ export default function GameDashboard({
 
     setBalance(next.balance)
     setIslands(next.islands)
+    syncRef.current?.()
 
     if (miner) {
       toast.success(`${miner.name} joined your mine`, {
@@ -137,6 +148,7 @@ export default function GameDashboard({
 
     setBalance(next.balance)
     setIslands(next.islands)
+    syncRef.current?.()
     toast.success(`Collected ${collected.toLocaleString()} coins`, {
       description: "Your miners keep digging while you are away.",
     })
