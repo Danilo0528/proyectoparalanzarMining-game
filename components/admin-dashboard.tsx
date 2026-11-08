@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import WalletsTab from "@/components/tabs/wallets-tab"
 
@@ -58,6 +59,10 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
   const [wallets, setWallets] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchEmail, setSearchEmail] = useState("")
+  const [userPage, setUserPage] = useState(1)
+  const USERS_PER_PAGE = 15
+  const [withdrawalFilter, setWithdrawalFilter] = useState<"all" | "pending" | "approved" | "completed" | "rejected">("all")
+  const [depositFilter, setDepositFilter] = useState<"all" | "pending_verification" | "verified" | "rejected">("all")
 
   // Economy stats
   const [economyStats, setEconomyStats] = useState({
@@ -127,13 +132,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Withdrawal approved! Now you must send payment manually to the user.')
+        toast.success('✅ Withdrawal approved! Now you must send payment manually to the user.')
         fetchData()
       } else {
-        alert('Failed to approve withdrawal')
+        toast.error('Failed to approve withdrawal')
       }
     } catch (error) {
-      alert('Error approving withdrawal')
+      toast.error('Error approving withdrawal')
     }
   }
 
@@ -155,13 +160,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Withdrawal marked as PAID!')
+        toast.success('✅ Withdrawal marked as PAID!')
         fetchData()
       } else {
-        alert('Failed to mark withdrawal as paid')
+        toast.error('Failed to mark withdrawal as paid')
       }
     } catch (error) {
-      alert('Error marking withdrawal as paid')
+      toast.error('Error marking withdrawal as paid')
     }
   }
 
@@ -180,13 +185,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('Withdrawal rejected and balance refunded to user')
+        toast.success('Withdrawal rejected and balance refunded to user')
         fetchData()
       } else {
-        alert('Failed to reject withdrawal')
+        toast.error('Failed to reject withdrawal')
       }
     } catch (error) {
-      alert('Error rejecting withdrawal')
+      toast.error('Error rejecting withdrawal')
     }
   }
 
@@ -208,13 +213,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Deposit verified! Payment confirmed.')
+        toast.success('✅ Deposit verified! Payment confirmed.')
         fetchData()
       } else {
-        alert('Failed to verify deposit')
+        toast.error('Failed to verify deposit')
       }
     } catch (error) {
-      alert('Error verifying deposit')
+      toast.error('Error verifying deposit')
     }
   }
 
@@ -236,13 +241,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('❌ Deposit rejected. Coins have been revoked from user balance.')
+        toast.success('❌ Deposit rejected. Coins have been revoked from user balance.')
         fetchData()
       } else {
-        alert('Failed to reject deposit')
+        toast.error('Failed to reject deposit')
       }
     } catch (error) {
-      alert('Error rejecting deposit')
+      toast.error('Error rejecting deposit')
     }
   }
 
@@ -261,13 +266,13 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert('✅ Wallet saved successfully!')
+        toast.success('✅ Wallet saved successfully!')
         fetchData()
       } else {
-        alert('Failed to save wallet')
+        toast.error('Failed to save wallet')
       }
     } catch (error) {
-      alert('Error saving wallet')
+      toast.error('Error saving wallet')
     }
   }
 
@@ -286,18 +291,28 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
       })
 
       if (res.ok) {
-        alert(`User role changed to ${newRole}`)
+        toast.success(`User role changed to ${newRole}`)
         fetchData()
       } else {
-        alert('Failed to change user role')
+        toast.error('Failed to change user role')
       }
     } catch (error) {
-      alert('Error changing user role')
+      toast.error('Error changing user role')
     }
   }
 
   const filteredUsers = users.filter(u => 
     u.email.toLowerCase().includes(searchEmail.toLowerCase())
+  )
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE))
+  const safePage = Math.min(userPage, totalPages)
+  const paginatedUsers = filteredUsers.slice((safePage - 1) * USERS_PER_PAGE, safePage * USERS_PER_PAGE)
+
+  const filteredWithdrawals = withdrawals.filter(w =>
+    withdrawalFilter === "all" ? true : w.status === withdrawalFilter
+  )
+  const filteredDeposits = deposits.filter(d =>
+    depositFilter === "all" ? true : d.status === depositFilter
   )
 
   if (loading) {
@@ -335,6 +350,12 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
               {tab}
             </Button>
           ))}
+          <Button
+            onClick={fetchData}
+            className="bg-white/10 hover:bg-white/20 text-arcade-text"
+          >
+            Refresh
+          </Button>
           <Button
             onClick={onLogout}
             className="bg-red-500 hover:bg-red-600 text-white"
@@ -380,7 +401,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredUsers.map((user, idx) => (
+                  {paginatedUsers.map((user, idx) => (
                     <tr key={idx} className="border-b border-arcade-border hover:bg-arcade-raised/30">
                       <td className="p-2">{user.email}</td>
                       <td className="p-2 font-bold">{user.balance?.toLocaleString() || 0}</td>
@@ -413,6 +434,30 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                 </tbody>
               </table>
             </div>
+
+            {filteredUsers.length > USERS_PER_PAGE && (
+              <div className="mt-4 flex items-center justify-between text-sm text-arcade-muted">
+                <span>
+                  Page {safePage} of {totalPages} · {filteredUsers.length} users
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => setUserPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage === 1}
+                    className="arcade-cta h-8 px-3 text-xs"
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    onClick={() => setUserPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage === totalPages}
+                    className="arcade-cta h-8 px-3 text-xs"
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -431,6 +476,23 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
 
             <h2 className="text-xl font-bold text-arcade-text mb-4">Withdrawal Requests</h2>
 
+            <div className="mb-4 flex flex-wrap gap-2">
+              {["all", "pending", "approved", "completed", "rejected"].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setWithdrawalFilter(f as any)}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors ${
+                    withdrawalFilter === f
+                      ? "border-arcade-gold bg-arcade-gold/15 text-arcade-gold"
+                      : "border-arcade-border bg-arcade-raised text-arcade-muted hover:text-arcade-text"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -446,7 +508,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                   </tr>
                 </thead>
                 <tbody>
-                  {withdrawals.map((withdrawal) => (
+                  {filteredWithdrawals.map((withdrawal) => (
                     <tr key={withdrawal.id} className="border-b border-arcade-border hover:bg-arcade-raised/30">
                       <td className="p-2 text-sm">{withdrawal.email}</td>
                       <td className="p-2 font-bold">{withdrawal.amount.toLocaleString()}</td>
@@ -544,6 +606,23 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
 
             <h2 className="text-xl font-bold text-arcade-text mb-4">Deposit Requests</h2>
 
+            <div className="mb-4 flex flex-wrap gap-2">
+              {["all", "pending_verification", "verified", "rejected"].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setDepositFilter(f as any)}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold capitalize transition-colors ${
+                    depositFilter === f
+                      ? "border-arcade-gold bg-arcade-gold/15 text-arcade-gold"
+                      : "border-arcade-border bg-arcade-raised text-arcade-muted hover:text-arcade-text"
+                  }`}
+                >
+                  {f.replace("_", " ")}
+                </button>
+              ))}
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -558,7 +637,7 @@ export default function AdminDashboard({ email, token, onLogout }: AdminDashboar
                   </tr>
                 </thead>
                 <tbody>
-                  {deposits.map((deposit) => (
+                  {filteredDeposits.map((deposit) => (
                     <tr key={deposit.id} className="border-b border-arcade-border hover:bg-arcade-raised/30">
                       <td className="p-2 text-sm">{deposit.email}</td>
                       <td className="p-2 font-bold">${deposit.amountUSD}</td>
@@ -716,12 +795,12 @@ function EconomyTab({ token }: { token: string }) {
       })
 
       if (res.ok) {
-        alert('Economy configuration saved successfully!')
+        toast.success('Economy configuration saved successfully!')
       } else {
-        alert('Failed to save economy configuration')
+        toast.error('Failed to save economy configuration')
       }
     } catch (error) {
-      alert('Error saving economy configuration')
+      toast.error('Error saving economy configuration')
     } finally {
       setSaving(false)
     }
