@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "redesign/*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Type check (non-blocking for legacy API errors)
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
+        env:
+          # Provide a placeholder so the build doesn't fail on missing secrets.
+          # Replace with real values via repository secrets when deploying.
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-placeholder-secret' }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb://localhost:27017/ci' }}
+
+  # ---------------------------------------------------------------------------
+  # Deploy (disabled until you pick a hosting provider).
+  # Uncomment and configure ONE of the options below when you decide where
+  # to publish. Keep the job gated on the main branch only.
+  # ---------------------------------------------------------------------------
+  # deploy:
+  #   name: Deploy
+  #   needs: build-and-test
+  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     # Option A: Vercel
+  #     # - uses: amondnet/vercel-action@v25
+  #     #   with:
+  #     #     vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #     #     vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #     #     vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  #     #     vercel-args: '--prod'
+  #     # Option B: your own server via SSH
+  #     # - uses: appleboy/ssh-action@v1
+  #     #   with:
+  #     #     host: ${{ secrets.SSH_HOST }}
+  #     #     username: ${{ secrets.SSH_USER }}
+  #     #     key: ${{ secrets.SSH_KEY }}
+  #     #     script: |
+  #     #       cd /var/www/melqo && git pull && npm ci && npm run build && pm2 restart melqo
