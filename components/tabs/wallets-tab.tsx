@@ -41,7 +41,7 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
   }
 
   return (
-    <div className="bg-white/80 rounded-lg p-6 shadow-lg">
+    <div className="arcade-card p-6">
       <div className="mb-6 p-4 bg-green-50 border-2 border-green-400 rounded-lg">
         <h3 className="font-bold text-green-800 mb-2">💼 Configuración de Billeteras Crypto</h3>
         <p className="text-sm text-green-900">
@@ -50,7 +50,7 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
         </p>
       </div>
 
-      <h2 className="text-xl font-bold text-[#4a3728] mb-4">Crypto Wallets Configuration</h2>
+      <h2 className="text-xl font-bold text-arcade-text mb-4">Crypto Wallets Configuration</h2>
 
       <div className="space-y-4">
         {wallets.map((wallet) => (
@@ -59,7 +59,7 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
             className={`border-2 rounded-lg p-4 transition-all ${
               wallet.enabled && wallet.address
                 ? "border-green-400 bg-green-50"
-                : "border-gray-300 bg-gray-50"
+                : "border-arcade-border bg-arcade-raised/40"
             }`}
           >
             {editingWallet === wallet.id ? (
@@ -67,10 +67,10 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-2">
                   <div>
-                    <h3 className="font-bold text-lg text-[#4a3728]">
+                    <h3 className="font-bold text-lg text-arcade-text">
                       {wallet.name} {wallet.network && `(${wallet.network})`}
                     </h3>
-                    <p className="text-sm text-gray-600">Symbol: {wallet.symbol}</p>
+                    <p className="text-sm text-arcade-muted">Symbol: {wallet.symbol}</p>
                   </div>
                   <div className="flex gap-2">
                     <Button onClick={handleSave} className="bg-green-500 hover:bg-green-600">
@@ -83,7 +83,7 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
                 </div>
 
                 <div>
-                  <label className="text-sm font-bold text-[#4a3728] block mb-1">
+                  <label className="text-sm font-bold text-arcade-text block mb-1">
                     Wallet Address *
                   </label>
                   <Input
@@ -103,11 +103,11 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
                       onChange={(e) => setFormData({ ...formData, enabled: e.target.checked })}
                       className="w-4 h-4"
                     />
-                    <span className="text-sm font-bold text-[#4a3728]">Enabled</span>
+                    <span className="text-sm font-bold text-arcade-text">Enabled</span>
                   </label>
 
                   <div className="flex-1">
-                    <label className="text-sm font-bold text-[#4a3728] block mb-1">
+                    <label className="text-sm font-bold text-arcade-text block mb-1">
                       Min Deposit (USD)
                     </label>
                     <Input
@@ -120,7 +120,7 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
                 </div>
 
                 <div>
-                  <label className="text-sm font-bold text-[#4a3728] block mb-1">
+                  <label className="text-sm font-bold text-arcade-text block mb-1">
                     Instructions for users (optional)
                   </label>
                   <Input
@@ -136,7 +136,7 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-[#4a3728]">
+                    <h3 className="font-bold text-arcade-text">
                       {wallet.name} {wallet.network && `(${wallet.network})`}
                     </h3>
                     {wallet.enabled && wallet.address ? (
@@ -155,10 +155,10 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
                       {wallet.address}
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-500 mb-1">No address configured</p>
+                    <p className="text-xs text-arcade-muted mb-1">No address configured</p>
                   )}
                   
-                  <div className="flex gap-4 text-xs text-gray-600">
+                  <div className="flex gap-4 text-xs text-arcade-muted">
                     <span>Min: ${wallet.minDepositUSD || 0}</span>
                     {wallet.instructions && (
                       <span className="truncate max-w-md">{wallet.instructions}</span>
@@ -178,7 +178,7 @@ export default function WalletsTab({ wallets, onSaveWallet, token }: WalletsTabP
         ))}
 
         {wallets.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-arcade-muted">
             Loading wallets...
           </div>
         )}
