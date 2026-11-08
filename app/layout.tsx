@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Chakra_Petch, Russo_One } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const chakraPetch = Chakra_Petch({ subsets: ["latin"], weight: ["300", "400", "500", "600", "700"], variable: "--font-chakra" });
@@ -60,6 +61,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${chakraPetch.variable} ${russoOne.variable} font-sans antialiased`}>
         {children}
+        <Toaster position="top-center" />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

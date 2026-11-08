@@ -1,42 +1,50 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { Check, Copy, Link2, Share2, UserPlus, Users, Wallet } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { buildReferralLink } from "@/lib/game/referral"
+import { ArcadeCard, CoinAmount, EmptyState, SectionHeading, StatTile } from "@/components/game/ui"
 
 interface PartnersTabProps {
   email: string
 }
+
+const LEVELS = [
+  { level: 1, percentage: 7, description: "Direct referrals" },
+  { level: 2, percentage: 3, description: "Referrals of your referrals" },
+  { level: 3, percentage: 1, description: "Third-level referrals" },
+]
 
 export default function PartnersTab({ email }: PartnersTabProps) {
   const [copied, setCopied] = useState(false)
   const [referralData, setReferralData] = useState<any>({
     referrals: [],
     referralEarnings: 0,
-    totalReferrals: 0
+    totalReferrals: 0,
   })
   const [loading, setLoading] = useState(true)
   const [referralLink, setReferralLink] = useState("")
 
-  // Build referral link with current host
   useEffect(() => {
-    const host = typeof window !== 'undefined' ? window.location.origin : 'https://melqo.app'
-    setReferralLink(`${host}/?ref=${encodeURIComponent(email)}`)
+    const host = typeof window !== "undefined" ? window.location.origin : "https://melqo.app"
+    setReferralLink(buildReferralLink(host, email))
   }, [email])
 
-  // Fetch referral data
   useEffect(() => {
     const fetchReferralData = async () => {
       try {
-        const token = localStorage.getItem('melqo-token')
-        const res = await fetch('/api/referral', {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const token = localStorage.getItem("melqo-token")
+        const res = await fetch("/api/referral", {
+          headers: { Authorization: `Bearer ${token}` },
         })
         if (res.ok) {
           const data = await res.json()
           setReferralData(data)
         }
-      } catch (error) {
-        console.error('Failed to fetch referral data:', error)
+      } catch {
+        // Keep the empty state when the request fails.
       } finally {
         setLoading(false)
       }
@@ -45,149 +53,153 @@ export default function PartnersTab({ email }: PartnersTabProps) {
     fetchReferralData()
   }, [])
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink)
+      setCopied(true)
+      toast.success("Referral link copied")
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      toast.error("Could not copy the link")
+    }
   }
-
-  const levels = [
-    { level: 1, percentage: 7, description: "Direct referrals" },
-    { level: 2, percentage: 3, description: "Referrals of your referrals" },
-    { level: 3, percentage: 1, description: "3rd level referrals" },
-  ]
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <div className="w-16 h-16 border-4 border-[#d4a534] border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center py-24">
+        <div className="h-14 w-14 animate-spin rounded-full border-4 border-arcade-gold border-t-transparent" />
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Referral Link Card */}
-      <div
-        className="p-6 rounded-lg"
-        style={{
-          background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
-          border: "3px solid #c4a574",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
-        }}
-      >
-        <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Your Referral Link</h2>
-        <p className="text-sm text-[#6b5344] mb-3">
-          Share this link and earn 7% of your referrals' earnings!
-        </p>
-        <div className="flex gap-2">
-          <div className="flex-1 bg-white/60 rounded-lg px-4 py-3 border border-[#c4a574]">
-            <span className="text-[#4a3728] text-sm md:text-base truncate block">{referralLink}</span>
+      <SectionHeading
+        eyebrow="Partners"
+        title="Invite miners, earn together"
+        description="Share your link and earn commission from every referral, three levels deep."
+        icon={Users}
+      />
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatTile
+          icon={UserPlus}
+          label="Total referrals"
+          value={referralData.totalReferrals || 0}
+          tone="cyan"
+        />
+        <StatTile
+          icon={Wallet}
+          label="Referral earnings"
+          value={<CoinAmount value={Number(referralData.referralEarnings || 0).toFixed(0)} />}
+          tone="gold"
+        />
+        <StatTile
+          icon={Share2}
+          label="Top commission"
+          value="7%"
+          hint="Level 1 direct referrals"
+          tone="violet"
+        />
+      </div>
+
+      <ArcadeCard className="p-5 md:p-6">
+        <SectionHeading
+          eyebrow="Your link"
+          title="Share and grow"
+          description="Every player who joins from this link is tracked to your account."
+          icon={Link2}
+        />
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-arcade-border bg-black/30 px-3 py-2.5">
+            <Link2 className="h-4 w-4 shrink-0 text-arcade-muted" />
+            <span className="truncate text-sm text-arcade-text">{referralLink}</span>
           </div>
           <Button
+            type="button"
             onClick={handleCopy}
-            className="bg-gradient-to-b from-[#f5d742] to-[#d4a534] hover:from-[#f5d742] hover:to-[#c49a2f] text-[#4a3728] font-bold rounded-lg border-2 border-[#a67c00]"
+            className="arcade-cta h-11 shrink-0 rounded-xl px-5 text-sm font-bold"
           >
-            {copied ? "✓ Copied!" : "📋 Copy"}
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? "Copied" : "Copy link"}
           </Button>
         </div>
+      </ArcadeCard>
 
-        <div className="mt-4 grid grid-cols-3 gap-4 text-center">
-          <div className="p-3 bg-[#e8d5b0]/50 rounded-lg border-2 border-[#c4a574]">
-            <p className="text-2xl font-bold text-[#d4a534]">{referralData.totalReferrals || 0}</p>
-            <p className="text-sm text-[#6b5344]">Total Referrals</p>
-          </div>
-          <div className="p-3 bg-[#e8d5b0]/50 rounded-lg border-2 border-[#c4a574]">
-            <p className="text-2xl font-bold text-[#d4a534]">{(referralData.referralEarnings || 0).toFixed(0)}</p>
-            <p className="text-sm text-[#6b5344]">Total Earnings</p>
-          </div>
-          <div className="p-3 bg-[#e8d5b0]/50 rounded-lg border-2 border-[#c4a574]">
-            <p className="text-2xl font-bold text-[#d4a534]">7%</p>
-            <p className="text-sm text-[#6b5344]">Commission</p>
-          </div>
-        </div>
-      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ArcadeCard className="p-5 md:p-6">
+          <SectionHeading
+            eyebrow="Program"
+            title="Commission levels"
+            description="The more your network mines, the more you earn."
+            icon={Share2}
+          />
 
-      {/* Referral Levels */}
-      <div
-        className="p-6 rounded-lg"
-        style={{
-          background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
-          border: "3px solid #c4a574",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
-        }}
-      >
-        <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Referral Program</h2>
-        <div className="space-y-3">
-          {levels.map(level => (
-            <div
-              key={level.level}
-              className="p-4 rounded-lg bg-[#e8d5b0]/50 border-2 border-[#c4a574] flex items-center justify-between"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-b from-[#f5d742] to-[#d4a534] flex items-center justify-center">
-                  <span className="text-xl font-bold text-[#4a3728]">{level.level}</span>
-                </div>
-                <div>
-                  <p className="font-bold text-[#4a3728]">Level {level.level}</p>
-                  <p className="text-sm text-[#6b5344]">{level.description}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-[#d4a534]">{level.percentage}%</p>
-                <p className="text-xs text-[#6b5344]">Commission</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Referral List */}
-      <div
-        className="p-6 rounded-lg"
-        style={{
-          background: "linear-gradient(135deg, #f5e6c8 0%, #e8d5b0 100%)",
-          border: "3px solid #c4a574",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.3)"
-        }}
-      >
-        <h2 className="text-2xl font-bold text-[#4a3728] mb-4">Your Referrals</h2>
-        {referralData.referrals && referralData.referrals.length > 0 ? (
-          <div className="space-y-3">
-            {referralData.referrals.map((ref: any, idx: number) => (
+          <div className="mt-4 space-y-3">
+            {LEVELS.map((level) => (
               <div
-                key={idx}
-                className="p-4 rounded-lg bg-[#e8d5b0]/50 border-2 border-[#c4a574] flex items-center justify-between"
+                key={level.level}
+                className="flex items-center justify-between gap-3 rounded-xl border border-arcade-border bg-black/20 p-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#c4a574] flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6" fill="#4a3728">
-                      <circle cx="12" cy="8" r="4" />
-                      <path d="M12 14c-6 0-8 3-8 6v2h16v-2c0-3-2-6-8-6z" />
-                    </svg>
-                  </div>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-arcade-gold/30 bg-arcade-gold/10 font-display text-arcade-gold">
+                    {level.level}
+                  </span>
                   <div>
-                    <p className="font-bold text-[#4a3728]">{ref.email}</p>
-                    <p className="text-xs text-[#6b5344]">Level {ref.level} - Joined {new Date(ref.referredAt).toLocaleDateString()}</p>
+                    <p className="text-sm font-semibold text-arcade-text">Level {level.level}</p>
+                    <p className="text-xs text-arcade-muted">{level.description}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#d4a534">
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                  <span className="font-bold text-[#4a3728]">+{ref.earnings || 0}</span>
-                </div>
+                <span className="font-display text-xl text-arcade-gold">{level.percentage}%</span>
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-8">
-            <svg viewBox="0 0 24 24" className="w-16 h-16 mx-auto mb-4" fill="#c4a574">
-              <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
-            </svg>
-            <p className="text-[#6b5344]">No referrals yet. Share your link to start earning!</p>
+        </ArcadeCard>
+
+        <ArcadeCard className="p-5 md:p-6">
+          <SectionHeading
+            eyebrow="Network"
+            title="Your referrals"
+            description="Players who joined with your link."
+            icon={Users}
+          />
+
+          <div className="mt-4">
+            {referralData.referrals && referralData.referrals.length > 0 ? (
+              <ul className="divide-y divide-arcade-border/60">
+                {referralData.referrals.map((referral: any, index: number) => (
+                  <li key={index} className="flex items-center justify-between gap-3 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-arcade-violet to-arcade-cyan text-xs font-bold text-white">
+                        {String(referral.email || "?").charAt(0).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-arcade-text">
+                          {referral.email}
+                        </p>
+                        <p className="text-xs text-arcade-muted">
+                          Level {referral.level} · Joined{" "}
+                          {new Date(referral.referredAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <CoinAmount
+                      value={`+${Number(referral.earnings || 0).toLocaleString()}`}
+                      className="text-sm text-arcade-green"
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <EmptyState
+                icon={UserPlus}
+                title="No referrals yet"
+                description="Share your link to start building your mining network."
+              />
+            )}
           </div>
-        )}
+        </ArcadeCard>
       </div>
     </div>
   )
